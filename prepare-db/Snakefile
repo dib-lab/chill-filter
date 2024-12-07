@@ -1,0 +1,23 @@
+GENOMES = ['bosTau9',
+           'canFam6',
+           'equCab3',
+           'felCat9',
+           'galGal6',
+           'hg38',
+           'mm39',
+           'oviAri4',
+           'susScr11']
+
+rule all:
+    input:
+        expand('outputs/{g}.k51.100k.sig.zip', g=GENOMES)
+
+
+rule downsample:
+    input:
+        "downloads/{g}.sig.zip",
+    output:
+        "outputs/{g}.k51.100k.sig.zip",
+    shell: """
+        sourmash sig downsample -k 51 --scaled 100_000 {input} -o {output}
+    """
