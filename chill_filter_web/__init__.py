@@ -101,6 +101,7 @@ def get_md5(path):
                 f_found = sum_weighted_found / total_weighted_hashes
 
                 return render_template("sample_search.html",
+                                       sig=ss,
                                        gather_df=gather_df,
                                        f_found=f_found)
             else:
