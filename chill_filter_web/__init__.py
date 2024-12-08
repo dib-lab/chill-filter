@@ -5,6 +5,8 @@ from werkzeug.utils import secure_filename
 import sourmash
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 import pandas as pd
+import tempfile
+import time
 
 UPLOAD_FOLDER = '/tmp/chill'
 
@@ -60,26 +62,42 @@ def get_md5(path):
         ss = ss.select(moltype='DNA', ksize=51, scaled=100_000)
         if len(ss) == 1:
             ss = list(ss.signatures())[0]
-            success = True
+            if ss.md5sum() == md5:
+                success = True
 
     if success:
         if action == 'search':
+            xxx_tmp = tempfile.NamedTemporaryFile(delete=False)
+            xxx_tmp.close()
+            csv_filename = xxx_tmp.name
+
+            start = time.time()
             status = branch.do_fastgather(outpath,
-                                          'prepare-db/animals-and-gtdb.mf.csv',
+                                          'prepare-db/animals-and-gtdb.rocksdb',
                                           0,
                                           51,
                                           100_000,
                                           'DNA',
-                                          'foo.csv',
+                                          csv_filename,
                                           None)
-            print('XXX', status)
+            end = time.time()
 
-            gather_df = pd.read_csv('foo.csv')
+            print(f'branchwater gather status: {status}; time: {end - start:.2f}s')
+            print(f'output is in: "{csv_filename}"')
+            if status !=0 :
+                return "search failed, for reasons that are probably not your fault"
+
+            gather_df = pd.read_csv(csv_filename)
             if len(gather_df):
                 last_row = gather_df.tail(1).squeeze()
                 sum_weighted_found = last_row['sum_weighted_found'] 
                 total_weighted_hashes = last_row['total_weighted_hashes']
-                return(f"total ref k-mers found (abund): {sum_weighted_found / total_weighted_hashes * 100:.1f}%")
+
+                s = ""
+                for row in gather_df.to_dict(orient='records'):
+                    s += f"{row['match_name']} - {row['f_unique_weighted']*100:.1f}%<br>"
+                s += f"<p>total ref k-mers found (abund): {sum_weighted_found / total_weighted_hashes * 100:.1f}%"
+                return(s)
             else:
                 return "no matches found!"
 
