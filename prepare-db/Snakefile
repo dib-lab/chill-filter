@@ -18,7 +18,7 @@ rule index_animals_and_gtdb:
     output:
         protected("animals-and-gtdb.rocksdb"),
     shell: """
-        sourmash scripts index {input} -o  -k 51
+        sourmash scripts index {input} -o {output} -k 51
     """
 
 rule animals_and_gtdb:
