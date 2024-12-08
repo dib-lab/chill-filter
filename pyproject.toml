@@ -1,0 +1,18 @@
+[project]
+name = "chill-filter"
+description = "rapid sample screening for shotgun DNA sequencing data sets"
+readme = "README.md"
+version = "0.1"
+authors = [
+  { name="C. Titus Brown" },
+]
+
+[metadata]
+license = { text = "Affero GPL" }
+
+[project.urls]
+"Source" = "https://github.com/dib-lab/chill-filter"
+
+[tool.setuptools.packages.find]
+where = ["./"]
+include = ["chill_filter_web", "chill_filter"]
