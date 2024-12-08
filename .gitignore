@@ -2,3 +2,4 @@
 *~
 .snakemake
 *.zip
+*.csv

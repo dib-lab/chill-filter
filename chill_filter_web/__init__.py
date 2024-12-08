@@ -65,8 +65,7 @@ def get_md5(path):
     if success:
         if action == 'search':
             status = branch.do_fastgather(outpath,
-#                                          'prepare-db/animals-and-gtdb.mf.csv',
-                                          'podar-ref.zip',
+                                          'prepare-db/animals-and-gtdb.mf.csv',
                                           0,
                                           51,
                                           100_000,
