@@ -1,4 +1,4 @@
-# chill-filter:Rapid sample screening for shotgun sequencing data
+# chill-filter: Rapid sample screening for shotgun sequencing data
 
 ## Quickstart for the Web server:
 
