@@ -57,6 +57,7 @@ def get_md5(path):
 
     outpath = os.path.join(UPLOAD_FOLDER, filename)
     success = False
+    ss = None
     if os.path.exists(outpath):
         ss = sourmash.load_file_as_index(outpath)
         ss = ss.select(moltype='DNA', ksize=51, scaled=100_000)
@@ -66,6 +67,8 @@ def get_md5(path):
                 success = True
 
     if success:
+        # @CTB check that it's weighted?
+        assert ss is not None
         if action == 'search':
             csv_filename = outpath + '.gather.csv'
             if not os.path.exists(csv_filename):
@@ -97,12 +100,18 @@ def get_md5(path):
 
                 f_found = sum_weighted_found / total_weighted_hashes
 
-                return render_template("search.html",
+                return render_template("sample_search.html",
                                        gather_df=gather_df,
                                        f_found=f_found)
             else:
                 return "no matches found!"
 
-        return f"name: {ss.name}, len: {len(ss.minhash)}, {action}"
+        elif action == 'download':
+            return "download me"
+
+        # default
+        sum_weighted_hashes = sum(ss.minhash.hashes.values())
+        return render_template("sample_index.html", sig=ss,
+                               sum_weighted_hashes=sum_weighted_hashes)
     else:
         return redirect(url_for('index'))

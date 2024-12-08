@@ -1,0 +1,11 @@
+<!- template: sample_index.html -->
+<h1>Sample summary</h1>
+
+Name: {{ sig.name }}<p>
+Estimated size of sample: {{ sum_weighted_hashes * sig.minhash.scaled / 1e6 }} Mbp
+
+<p>
+  
+  <a href="./search">Screen your sample against bacteria and animal genomes</a>
+  | <a href="./download">Download sketch</a>
+  | <a href='../../'>Try another sample</a>

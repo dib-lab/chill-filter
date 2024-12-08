@@ -1,0 +1,33 @@
+<!- template: sample_search.html -->
+
+<h2>Sample summary</h2>
+
+total sample known: <b>{{ "{:.1f}".format(f_found * 100) }}%</b>
+<p>
+(This is an estimate for how much of your sequencing data will map to known reference genomes.)
+<p>
+Your sample is {{ "{:.1f}".format((1 - f_found) * 100) }}% unknown. This is a combined estimate of genomic sequence not in our databsae, entirely new genomic sequence, SNPs/polymorphisms, or erroneous sequence.
+
+<h2>Sample breakdown</h2>
+
+<table border=1>
+  <tr> <th> Percent assigned </th> <th> Reference genome or collection </th> </tr>
+  {% for item in gather_df.to_dict(orient='records') %}
+   <tr>
+     <td>{{ '{:.1f}'.format(item['f_unique_weighted'] * 100) }}% </td>
+     <td> {{ item['match_name'] }}  </td>
+   </tr>
+  {% endfor %}
+</table>
+
+<p>
+  
+<h2>TODO</h2>
+<ul>
+  <li> high abundance, low abundance split!
+</ul>
+
+<p>
+
+<a href='./'>Return to sample page</a>
+  
