@@ -16,7 +16,7 @@ rule index_animals_and_gtdb:
     input:
         "animals-and-gtdb.mf.csv",
     output:
-        protected("animals-and-gtdb.rocksdb"),
+        protected(directory("animals-and-gtdb.rocksdb")),
     shell: """
         sourmash scripts index {input} -o {output} -k 51
     """
