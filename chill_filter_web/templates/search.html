@@ -1,0 +1,10 @@
+{% for item in gather_df.to_dict(orient='records') %}
+   {{ '{:.1f}'.format(item['f_unique_weighted'] * 100) }}% - {{ item['match_name'] }} <br>
+{% endfor %}
+
+total sample known: {{ "{:.1f}".format(f_found * 100) }}%
+<p>
+Your sample is {{ "{:.1f}".format((1 - f_found) * 100) }}% unknown. This could be sequencing errors or new content.
+<p>
+TODO: high abundance, low abundance split!
+  

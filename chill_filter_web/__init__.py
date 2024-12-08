@@ -67,25 +67,26 @@ def get_md5(path):
 
     if success:
         if action == 'search':
-            xxx_tmp = tempfile.NamedTemporaryFile(delete=False)
-            xxx_tmp.close()
-            csv_filename = xxx_tmp.name
+            csv_filename = outpath + '.gather.csv'
+            if not os.path.exists(csv_filename):
+                start = time.time()
+                status = branch.do_fastgather(outpath,
+                                              'prepare-db/animals-and-gtdb.rocksdb',
+                                              0,
+                                              51,
+                                              100_000,
+                                              'DNA',
+                                              csv_filename,
+                                              None)
+                end = time.time()
 
-            start = time.time()
-            status = branch.do_fastgather(outpath,
-                                          'prepare-db/animals-and-gtdb.rocksdb',
-                                          0,
-                                          51,
-                                          100_000,
-                                          'DNA',
-                                          csv_filename,
-                                          None)
-            end = time.time()
-
-            print(f'branchwater gather status: {status}; time: {end - start:.2f}s')
-            print(f'output is in: "{csv_filename}"')
-            if status !=0 :
-                return "search failed, for reasons that are probably not your fault"
+                print(f'branchwater gather status: {status}; time: {end - start:.2f}s')
+                if status !=0 :
+                    return "search failed, for reasons that are probably not your fault"
+                else:
+                    print(f'output is in: "{csv_filename}"')
+            else:
+                print(f"using cached output in: '{csv_filename}'")
 
             gather_df = pd.read_csv(csv_filename)
             gather_df = gather_df[gather_df['f_unique_weighted'] >= 0.1]
@@ -94,11 +95,11 @@ def get_md5(path):
                 sum_weighted_found = last_row['sum_weighted_found'] 
                 total_weighted_hashes = last_row['total_weighted_hashes']
 
-                s = ""
-                for row in gather_df.to_dict(orient='records'):
-                    s += f"{row['match_name']} - {row['f_unique_weighted']*100:.1f}%<br>"
-                s += f"<p>total ref k-mers found (abund): {sum_weighted_found / total_weighted_hashes * 100:.1f}%"
-                return(s)
+                f_found = sum_weighted_found / total_weighted_hashes
+
+                return render_template("search.html",
+                                       gather_df=gather_df,
+                                       f_found=f_found)
             else:
                 return "no matches found!"
 
