@@ -1,0 +1,11 @@
+name: chill
+channels:
+ - conda-forge
+ - bioconda
+ - defaults
+dependencies:
+ - python>=3.12,<3.13
+ - flask
+ - snakemake-minimal
+ - sourmash_plugin_branchwater
+ - pandas
