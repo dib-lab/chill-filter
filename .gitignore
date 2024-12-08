@@ -3,3 +3,4 @@
 .snakemake
 *.zip
 *.csv
+*.rocksdb
