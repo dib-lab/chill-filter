@@ -88,6 +88,7 @@ def get_md5(path):
                 return "search failed, for reasons that are probably not your fault"
 
             gather_df = pd.read_csv(csv_filename)
+            gather_df = gather_df[gather_df['f_unique_weighted'] >= 0.1]
             if len(gather_df):
                 last_row = gather_df.tail(1).squeeze()
                 sum_weighted_found = last_row['sum_weighted_found'] 
