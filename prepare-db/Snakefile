@@ -10,7 +10,17 @@ GENOMES = ['bosTau9',
 
 rule all:
     input:
-        expand('outputs/{g}.k51.100k.sig.zip', g=GENOMES)
+        'animals-and-gtdb.mf.csv',
+
+rule animals_and_gtdb:
+    input:
+        expand('outputs/{g}.k51.100k.sig.zip', g=GENOMES),
+        'outputs/all-gtdb-rs220.k51.100k.sig.zip',
+    output:
+        'animals-and-gtdb.mf.csv',
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
 
 
 rule downsample:
@@ -21,3 +31,14 @@ rule downsample:
     shell: """
         sourmash sig downsample -k 51 --scaled 100_000 {input} -o {output}
     """
+
+
+rule merge_microbial:
+    input:
+        'downloads/gtdb-rs220-k51-s100_000.zip',
+    output:
+        'outputs/all-gtdb-rs220.k51.100k.sig.zip',
+    shell: """
+        sourmash sig merge {input} -o {output} --set-name "bacteria and archaea (GTDB rs220)"
+    """
+    
