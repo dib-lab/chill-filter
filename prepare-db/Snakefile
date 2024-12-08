@@ -10,7 +10,16 @@ GENOMES = ['bosTau9',
 
 rule all:
     input:
-        'animals-and-gtdb.mf.csv',
+        'animals-and-gtdb.rocksdb',
+
+rule index_animals_and_gtdb:
+    input:
+        "animals-and-gtdb.mf.csv",
+    output:
+        protected("animals-and-gtdb.rocksdb"),
+    shell: """
+        sourmash scripts index {input} -o  -k 51
+    """
 
 rule animals_and_gtdb:
     input:
