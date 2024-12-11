@@ -247,12 +247,13 @@
     <hr style="border-width: 3px; border-color: black">
 
     <div style="margin: 50px">
-      <mgnify-sourmash-component id="sourmash" ksize="21" scaled="1000">
+      <mgnify-sourmash-component id="sourmash" ksize="51" scaled="100000">
     </mgnify-sourmash-component></div>
 
     <!-- Create form -->
     <div id="form-container"></div>
-    <form id="form" style="margin: 40px" enctype="multipart/form-data/">
+    <form id="form" style="margin: 40px" action="/sketch" method="POST">
+      <div id="sketchInput"> </div>
       <button type="submit" id="myButton" class="btn btn-light">
         <strong>Submit</strong>
       </button>
@@ -268,11 +269,23 @@
         evt.preventDefault();
         signature = evt.detail.signature;
         document.querySelector("#myButton").disabled = false;
+
+        firstForm = document.forms[0];
+      var inputContainer = document.getElementById("sketchInput");
+
+      var newInput = document.createElement('input');
+      newInput.type = 'text';
+      newInput.name = 'signature';
+      newInput.value = signature;
+      newInput.placeholder = '(sketch goes here)';
+
+      // Append the new input field to the container
+      inputContainer.appendChild(newInput);
       });
 
       //Once data submitted, add notification and send data to flask app
       form.addEventListener("submit", (event) => {
-        event.preventDefault();
+      // event.preventDefault();
         document.querySelector("#myButton").disabled = true;
         // Create a new <nav> element
         const navElement = document.createElement("nav");

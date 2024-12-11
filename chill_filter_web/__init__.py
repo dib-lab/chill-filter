@@ -53,6 +53,39 @@ def index():
 
 @app.route("/sketch", methods=['GET', 'POST'])
 def index2():
+    print(request.method)
+    if request.method == 'POST':
+        print('FORM:', request.form.keys())
+        print('FILES:', request.files.keys())
+        # check if the post request has the file part
+        if 'signature' not in request.form:
+            flash('No file part')
+            return redirect(request.url)
+        sig_json = request.form['signature']
+        print(sig_json)
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if 1:
+            success = False
+            filename = secure_filename("fooCTB.sig")
+            outpath = os.path.join(UPLOAD_FOLDER, filename)
+            with open(outpath, "w") as fp:
+                fp.write(f"[{sig_json}]")
+
+            try:
+                ss = sourmash.load_file_as_index(outpath)
+                ss = ss.select(moltype='DNA', ksize=51, scaled=100_000)
+                if len(ss) == 1:
+                    success = True
+                    ss = list(ss.signatures())[0]
+                    md5 = ss.md5sum()
+                    print('SUCCESS')
+            except:
+                raise
+                pass
+                
+            if success:
+                return redirect(f'/{md5}/{filename}/')
     return render_template("index2.html")
     
 
