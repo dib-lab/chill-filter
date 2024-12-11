@@ -53,7 +53,7 @@ def index():
 
 
 @app.route("/sketch", methods=['GET', 'POST'])
-def index2():
+def sketch():
     print(request.method)
     if request.method == 'POST':
         print('FORM:', request.form.keys())
@@ -87,7 +87,7 @@ def index2():
                 
             if success:
                 return redirect(f'/{md5}/{filename}/')
-    return render_template("index2.html")
+    return render_template("index.html")
     
 
 @app.route('/')
