@@ -18,4 +18,4 @@ if __name__ == "__main__":
     #sess.init_app(app)
 
     app.debug = True
-    app.run()
+    app.run(port=5001)
