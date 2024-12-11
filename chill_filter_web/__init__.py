@@ -1,8 +1,9 @@
 import os
 from flask import Flask, flash, request, redirect, url_for
-from flask import render_template
+from flask import render_template, send_from_directory
 from werkzeug.utils import secure_filename
 import sourmash
+from sourmash import save_signatures_to_json
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 import pandas as pd
 import tempfile
@@ -63,31 +64,28 @@ def sketch():
             flash('No file part')
             return redirect(request.url)
         sig_json = request.form['signature']
-        print(sig_json)
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if 1:
-            success = False
-            filename = f"t{int(time.time())}.sig.gz"
-            outpath = os.path.join(UPLOAD_FOLDER, filename)
-            with gzip.open(outpath, "wt") as fp:
-                fp.write(f"[{sig_json}]")
 
-            try:
-                ss = sourmash.load_file_as_index(outpath)
-                ss = ss.select(moltype='DNA', ksize=51, scaled=100_000)
-                if len(ss) == 1:
-                    success = True
-                    ss = list(ss.signatures())[0]
-                    md5 = ss.md5sum()
-                    print('SUCCESS')
-            except:
-                raise
-                pass
-                
-            if success:
-                return redirect(f'/{md5}/{filename}/')
-    return render_template("index.html")
+        success = False
+        filename = f"t{int(time.time())}.sig.gz"
+        outpath = os.path.join(UPLOAD_FOLDER, filename)
+        with gzip.open(outpath, "wt") as fp:
+            fp.write(f"[{sig_json}]")
+
+        try:
+            ss = sourmash.load_file_as_index(outpath)
+            ss = ss.select(moltype='DNA', ksize=51, scaled=100_000)
+            if len(ss) == 1:
+                success = True
+                ss = list(ss.signatures())[0]
+                md5 = ss.md5sum()
+                print('SUCCESS')
+        except:
+            raise
+            pass
+
+        if success:
+            return redirect(f'/{md5}/{filename}/')
+    return redirect(url_for('index'))
     
 
 @app.route('/')
@@ -110,6 +108,7 @@ def get_md5(path):
     if success:
         # @CTB check that it's weighted?
         assert ss is not None
+        sample_name = ss.name or "(unnamed sample)"
         if action == 'search':
             csv_filename = outpath + '.gather.csv'
             if not os.path.exists(csv_filename):
@@ -142,6 +141,7 @@ def get_md5(path):
                 f_found = sum_weighted_found / total_weighted_hashes
 
                 return render_template("sample_search.html",
+                                       sample_name=sample_name,
                                        sig=ss,
                                        gather_df=gather_df,
                                        f_found=f_found)
@@ -149,11 +149,13 @@ def get_md5(path):
                 return "no matches found!"
 
         elif action == 'download':
-            return "download me"
+            return send_from_directory(UPLOAD_FOLDER, filename)
 
         # default
         sum_weighted_hashes = sum(ss.minhash.hashes.values())
         return render_template("sample_index.html", sig=ss,
+                               sig_filename=filename,
+                               sample_name=sample_name,
                                sum_weighted_hashes=sum_weighted_hashes)
     else:
         return redirect(url_for('index'))

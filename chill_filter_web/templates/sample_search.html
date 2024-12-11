@@ -1,8 +1,12 @@
-{% include "_header.html" %}
-
 <!- template: sample_search.html -->
+<head>
+  <title>search of {{ sample_name }} - chill-filter</title>
+  {% include "_header.html" %}
+{% include "_header.html" %}
+</head>
+<body>
 
-<h2>Sample summary</h2>
+<h2>Sample search summary for: {{ sample_name }}</h2>
 
 total sample known: <b>{{ "{:.1f}".format(f_found * 100) }}%</b>
 <p>
@@ -35,3 +39,4 @@ Your sample is {{ "{:.1f}".format((1 - f_found) * 100) }}% unknown. This is a co
   
 
 {% include "_footer.html" %}
+</body>
