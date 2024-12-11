@@ -7,6 +7,7 @@ from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 import pandas as pd
 import tempfile
 import time
+import gzip
 
 UPLOAD_FOLDER = '/tmp/chill'
 
@@ -67,9 +68,9 @@ def index2():
         # empty file without a filename.
         if 1:
             success = False
-            filename = secure_filename("fooCTB.sig")
+            filename = f"t{int(time.time())}.sig.gz"
             outpath = os.path.join(UPLOAD_FOLDER, filename)
-            with open(outpath, "w") as fp:
+            with gzip.open(outpath, "wt") as fp:
                 fp.write(f"[{sig_json}]")
 
             try:
