@@ -16,6 +16,8 @@ app = Flask(__name__)
 def index():
     print(request.method)
     if request.method == 'POST':
+        print('FORM:', request.form.keys())
+        print('FILES:', request.files.keys())
         # check if the post request has the file part
         if 'sketch' not in request.files:
             flash('No file part')
@@ -48,6 +50,11 @@ def index():
                 return redirect(f'/{md5}/{filename}/')
     return render_template("index.html")
 
+
+@app.route("/sketch", methods=['GET', 'POST'])
+def index2():
+    return render_template("index2.html")
+    
 
 @app.route('/')
 @app.route('/<path:path>')
