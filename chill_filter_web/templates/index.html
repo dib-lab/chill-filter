@@ -4,28 +4,25 @@
 <title>chill-filter sample query</title>
 </head>
 
-  <body data-extension-installed="2.4.5">
+  <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="navbar-brand">
-        <h2 style="margin: 10px">chill-filter sample query</h2>
+        <h2 style="margin: 10px">chill-filter: What's in my sample?</h2>
         <p style="margin: 10px">
-          Fast search for sample contents.
+          Quite fast sample screening.
         </p>
     <script defer="defer" src="static/mgnify-component/mgnify-sourmash-component.js"></script>
 
       <!-- Intro/header -->
 
     <div class="parent-element" style="text-align: center">
-      <h4>
-        Curious what your sample contains?
-      </h4>
-      <h6>
-        Select your FASTA/FASTQ file below, and click submit!
-      </h6>
-    </div>
     <hr style="border-width: 3px; border-color: black">
 
-    <div style="margin: 50px">
+      <h4>
+        Select your FASTA/FASTQ file below, and click submit!
+      </h4>
+
+      <div style="margin: 50px">
       <mgnify-sourmash-component id="sourmash" ksize="51" scaled="100000">
     </mgnify-sourmash-component></div>
 
@@ -47,6 +44,18 @@
   <input type=file name="sketch">
   <input type=submit value="Submit existing sketch">
 </form>
+    </div>
+
+
+    <div class="parent-element" style="text-align: left">
+    <hr style="border-width: 3px; border-color: black">
+
+        <p>
+          Powered by <a href="https://sourmash.rtfd.io">sourmash</a>. <p>
+        Links: <a href="https://github.com/dib-lab/chill-filter/">Source code</a> |
+    <A href="https://github.com/dib-lab/chill-filter/issues">Support forum</a>
+<p>
+        Contact the team at <a href="mailto:admin@sourmash.bio">admin@sourmash.bio</a>!
     </div>
 
     <script>
@@ -119,4 +128,4 @@
           });
       });
     </script>
-
+   </body>
