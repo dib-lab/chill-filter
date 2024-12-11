@@ -34,7 +34,7 @@
     <form id="form" style="margin: 40px" action="/sketch" method="POST">
       <div id="sketchInput"> </div>
       <button type="submit" id="myButton" class="btn btn-light">
-        <strong>Sketch DNA locally and submit!</strong>
+        <strong>Submit!</strong>
       </button>
     </form>
 
@@ -61,7 +61,7 @@
       var inputContainer = document.getElementById("sketchInput");
 
       var newInput = document.createElement('input');
-      newInput.type = 'text';
+      newInput.type = 'hidden';
       newInput.name = 'signature';
       newInput.value = signature;
       newInput.placeholder = '(sketch goes here)';
