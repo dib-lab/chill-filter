@@ -1,4 +1,6 @@
 <!- template: sample_index.html -->
+{% include "_header.html" %}
+
 <h1>Sample summary: {{ sig.name }} </h1>
 
 Name: {{ sig.name }}<p>
@@ -9,3 +11,5 @@ Estimated size of sample: {{ sum_weighted_hashes * sig.minhash.scaled / 1e6 }} M
   <a href="./search">Screen your sample against bacteria and animal genomes</a>
   | <a href="./download">Download sketch</a>
   | <a href='../../'>Try another sample</a>
+
+{% include "_footer.html" %}
