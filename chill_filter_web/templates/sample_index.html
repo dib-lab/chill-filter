@@ -7,7 +7,7 @@
 
 <h1>Sample summary: {{ sample_name }} </h1>
 
-Name: {{ sig.name }}<p>
+Name: {{ sig.name|default("(no name)", true) }}<p>
 
 Estimated size of sample: {{ sum_weighted_hashes * sig.minhash.scaled / 1e6 }} Mbp<p>
 
