@@ -11,7 +11,7 @@
         </p>
 
       <h4>
-       Choose a large genome or shotgun sequencing FASTA/FASTQ file below, and click submit to compress it and send it to our server!
+       Choose a large genome or shotgun sequencing FASTA/FASTQ file, and click submit to compress it and send it for screening!
       </h4>
 
       <div style="margin: 50px">
@@ -33,13 +33,23 @@
 
     <main class="container">
     <h4>
-      OR upload an existing sourmash signature at k=51 and scaled=100_000!
+      OR upload an existing sourmash signature at k=51 and scaled=100,000!
       </h4>
     <form method="POST" enctype="multipart/form-data" action="/">
       <input type=file name="sketch">
-      <input type=submit value="Submit existing sketch">
+      <input type=submit value="Submit existing sketch!">
     </form>
     </main>
+
+    <hr style="border-width: 3px; border-color: black">
+
+    <main class="container">
+      <h4>Examples:</h4>
+      SRR606249: A mock microbial community<br>
+      SRR5650070: A human gut metagenome from the iHMP<br>
+      SRR12324253: Zymo mock microbial community<br>
+      ERR1395610: a human WGS sample<br>
+      Bu5: a human WGS sample<br>
 
     {% include "_footer.html" %}
     
