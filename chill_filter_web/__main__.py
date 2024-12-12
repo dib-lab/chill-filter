@@ -1,4 +1,5 @@
 from flask import Flask, session
+import argparse
 #from flask.ext.session import Session
 
 SESSION_TYPE = 'memcache'
@@ -9,6 +10,10 @@ app = Flask(__name__)
 from . import app
 
 if __name__ == "__main__":
+    p = argparse.ArgumentParser()
+    p.add_argument('-p', '--port', default=5000, type=int)
+    p.add_argument('--host', default='127.0.0.1')
+    args = p.parse_args()
     # Quick test configuration. Please use proper Flask configuration options
     # in production settings, and use a separate file or environment variables
     # to manage the secret key!
@@ -18,4 +23,4 @@ if __name__ == "__main__":
     #sess.init_app(app)
 
     app.debug = True
-    app.run()
+    app.run(port=args.port, host=args.host)

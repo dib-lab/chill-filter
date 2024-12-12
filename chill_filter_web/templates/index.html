@@ -1,12 +1,122 @@
-<!- template: index.html -->
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="static/bootstrap.min.css" integrity="sha256-+omx7xYvI+/C0kfnQmjAIW8dDbTweWpbYHWzveX4ii4=" crossorigin="anonymous">
 
-Upload a k=51 / scaled=100_000 sketch:
-<p>
-<form method="POST" enctype="multipart/form-data">
+<title>chill-filter sample query</title>
+</head>
+
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="navbar-brand">
+        <h2 style="margin: 10px">chill-filter: What's in my sample?</h2>
+        <p style="margin: 10px">
+          Quite fast sample screening.
+        </p>
+    <script defer="defer" src="static/mgnify-component/mgnify-sourmash-component.js"></script>
+
+      <!-- Intro/header -->
+
+    <div class="parent-element" style="text-align: center">
+    <hr style="border-width: 3px; border-color: black">
+
+      <h4>
+       Choose a large genome or shotgun sequencing FASTA/FASTQ file below, and click submit to compress it and send it to our server!
+      </h4>
+
+      <div style="margin: 50px">
+      <mgnify-sourmash-component id="sourmash" ksize="51" scaled="100000">
+    </mgnify-sourmash-component></div>
+
+    <!-- Create form -->
+    <div id="form-container"></div>
+    <form id="form" style="margin: 40px" action="/sketch" method="POST">
+      <div id="sketchInput"> </div>
+      <button type="submit" id="myButton" class="btn btn-light">
+        <strong>Submit!</strong>
+      </button>
+    </form>
+
+    <hr style="border-width: 3px; border-color: black">
+    <div class="parent-element" style="text-align: center">
+    <h4>
+      OR upload an existing sourmash signature at k=51 and scaled=100_000!
+      </h4>
+<form method="POST" enctype="multipart/form-data" action="/">
   <input type=file name="sketch">
-  <input type=submit value="Upload sketch">
+  <input type=submit value="Submit existing sketch">
 </form>
+    </div>
 
-Note that your original sample will not be uploaded or stored on our server.
+    {% include "_footer.html" %}
+    
+    <script>
+      var signature;
+      //once sketched, signatures saved and submit button enabled
+      document.addEventListener("sketched", (evt) => {
+        evt.preventDefault();
+        signature = evt.detail.signature;
+        document.querySelector("#myButton").disabled = false;
 
-All uploaded sketches will be removed after seven days.
+        firstForm = document.forms[0];
+      var inputContainer = document.getElementById("sketchInput");
+
+      var newInput = document.createElement('input');
+      newInput.type = 'hidden';
+      newInput.name = 'signature';
+      newInput.value = signature;
+      newInput.placeholder = '(sketch goes here)';
+
+      // Append the new input field to the container
+      inputContainer.appendChild(newInput);
+      });
+
+      //Once data submitted, add notification and send data to flask app
+      form.addEventListener("submit", (event) => {
+      // event.preventDefault();
+        document.querySelector("#myButton").disabled = true;
+        // Create a new <nav> element
+        const navElement = document.createElement("nav");
+        navElement.classList.add(
+          "navbar",
+          "navbar-expand-lg",
+          "navbar-light",
+          "bg-light"
+        );
+        navElement.style.textAlign = "center"; // Add the text-align style
+
+        // Create a new <p> element and add it to the <nav> element
+        const paragraphElement = document.createElement("h3");
+        paragraphElement.contentEditable = true; // Make the text editable
+        paragraphElement.textContent =
+          "Do not navigate from page. The query may take up to 5 minutes!"; // Set the initial text content
+        navElement.appendChild(paragraphElement);
+        // Add an event listener to the <p> element to handle text changes
+        paragraphElement.addEventListener("input", (event) => {
+          console.log(`New text: ${event.target.textContent}`);
+        });
+        // Add the <nav> element to the DOM
+        dashboard.appendChild(navElement);
+        const formdata = {
+          signatures: signature,
+        };
+        const startTime = performance.now();
+        var data = {};
+
+        //Do fetch request to proper route and create dashboard
+        fetch("/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formdata),
+        })
+          .then((response) => response.json())
+          .then((jsonData) =>
+            createdashboard(jsonData, paragraphElement, navElement)
+          )
+          .catch((error) => {
+            console.error("Error sending data to Flask server:", error);
+          });
+      });
+    </script>
+   </body>
+</html>
