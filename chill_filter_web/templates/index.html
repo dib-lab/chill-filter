@@ -1,32 +1,26 @@
 <html><head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="static/bootstrap.min.css" integrity="sha256-+omx7xYvI+/C0kfnQmjAIW8dDbTweWpbYHWzveX4ii4=" crossorigin="anonymous">
-
-<title>chill-filter sample query</title>
+    <title>chill-filter sample screening - home page</title>
+    {% include "_header.html" %}
 </head>
 
   <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <div class="navbar-brand">
+    <main class="container">
         <h2 style="margin: 10px">chill-filter: What's in my sample?</h2>
         <p style="margin: 10px">
           Quite fast sample screening.
         </p>
-    <script defer="defer" src="static/mgnify-component/mgnify-sourmash-component.js"></script>
-
-      <!-- Intro/header -->
-
-    <div class="parent-element" style="text-align: center">
-    <hr style="border-width: 3px; border-color: black">
 
       <h4>
        Choose a large genome or shotgun sequencing FASTA/FASTQ file below, and click submit to compress it and send it to our server!
       </h4>
 
       <div style="margin: 50px">
-      <mgnify-sourmash-component id="sourmash" ksize="51" scaled="100000">
-    </mgnify-sourmash-component></div>
-
+        
     <!-- Create form -->
+    <script defer="defer" src="static/mgnify-component/mgnify-sourmash-component.js"></script>
+      <mgnify-sourmash-component id="sourmash" ksize="51" scaled="100000">
+      </mgnify-sourmash-component></div>
+
     <div id="form-container"></div>
     <form id="form" style="margin: 40px" action="/sketch" method="POST">
       <div id="sketchInput"> </div>
@@ -36,15 +30,16 @@
     </form>
 
     <hr style="border-width: 3px; border-color: black">
-    <div class="parent-element" style="text-align: center">
+
+    <main class="container">
     <h4>
       OR upload an existing sourmash signature at k=51 and scaled=100_000!
       </h4>
-<form method="POST" enctype="multipart/form-data" action="/">
-  <input type=file name="sketch">
-  <input type=submit value="Submit existing sketch">
-</form>
-    </div>
+    <form method="POST" enctype="multipart/form-data" action="/">
+      <input type=file name="sketch">
+      <input type=submit value="Submit existing sketch">
+    </form>
+    </main>
 
     {% include "_footer.html" %}
     
