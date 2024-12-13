@@ -9,27 +9,30 @@ import pandas as pd
 import tempfile
 import time
 import gzip
+import shutil
 
-UPLOAD_FOLDER = '/tmp/chill'
+UPLOAD_FOLDER = "/tmp/chill"
+EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
 
 app = Flask(__name__)
 
-@app.route("/", methods=['GET', 'POST'])
+
+@app.route("/", methods=["GET", "POST"])
 def index():
     print(request.method)
-    if request.method == 'POST':
-        print('FORM:', request.form.keys())
-        print('FILES:', request.files.keys())
+    if request.method == "POST":
+        print("FORM:", request.form.keys())
+        print("FILES:", request.files.keys())
         # check if the post request has the file part
-        if 'sketch' not in request.files:
-            flash('No file part')
+        if "sketch" not in request.files:
+            flash("No file part")
             return redirect(request.url)
-        file = request.files['sketch']
+        file = request.files["sketch"]
         # If the user does not select a file, the browser submits an
         # empty file without a filename.
         print(file.filename)
-        if file.filename == '':
-            flash('No selected file')
+        if file.filename == "":
+            flash("No selected file")
             return redirect(request.url)
         if file:
             success = False
@@ -39,31 +42,31 @@ def index():
 
             try:
                 ss = sourmash.load_file_as_index(outpath)
-                ss = ss.select(moltype='DNA', ksize=51, scaled=100_000)
+                ss = ss.select(moltype="DNA", ksize=51, scaled=100_000)
                 if len(ss) == 1:
                     success = True
                     ss = list(ss.signatures())[0]
                     md5 = ss.md5sum()
-                    print('SUCCESS')
+                    print("SUCCESS")
             except:
                 pass
-                
+
             if success:
-                return redirect(f'/{md5}/{filename}/')
+                return redirect(f"/{md5}/{filename}/")
     return render_template("index.html")
 
 
-@app.route("/sketch", methods=['GET', 'POST'])
+@app.route("/sketch", methods=["GET", "POST"])
 def sketch():
     print(request.method)
-    if request.method == 'POST':
-        print('FORM:', request.form.keys())
-        print('FILES:', request.files.keys())
+    if request.method == "POST":
+        print("FORM:", request.form.keys())
+        print("FILES:", request.files.keys())
         # check if the post request has the file part
-        if 'signature' not in request.form:
-            flash('No file part')
+        if "signature" not in request.form:
+            flash("No file part")
             return redirect(request.url)
-        sig_json = request.form['signature']
+        sig_json = request.form["signature"]
 
         success = False
         filename = f"t{int(time.time())}.sig.gz"
@@ -73,33 +76,60 @@ def sketch():
 
         try:
             ss = sourmash.load_file_as_index(outpath)
-            ss = ss.select(moltype='DNA', ksize=51, scaled=100_000)
+            ss = ss.select(moltype="DNA", ksize=51, scaled=100_000)
             if len(ss) == 1:
                 success = True
                 ss = list(ss.signatures())[0]
                 md5 = ss.md5sum()
-                print('SUCCESS')
+                print("SUCCESS")
         except:
             raise
             pass
 
         if success:
-            return redirect(f'/{md5}/{filename}/')
-    return redirect(url_for('index'))
-    
+            return redirect(f"/{md5}/{filename}/")
+    return redirect(url_for("index"))
 
-@app.route('/')
-@app.route('/<path:path>')
+
+@app.route("/example", methods=["GET"])
+def example():
+    "Retrieve an example"
+    filename = request.args["filename"]
+    filename = secure_filename(filename)
+    fullpath = os.path.join(EXAMPLES_DIR, filename)
+    if not os.path.exists(fullpath):
+        return f"example file {filename} not found in examples"
+
+    ss = sourmash.load_file_as_index(fullpath)
+    ss = ss.select(moltype="DNA", ksize=51, scaled=100_000)
+    if len(ss) == 1:
+        success = True
+        ss = list(ss.signatures())[0]
+        md5 = ss.md5sum()
+        print("SUCCESS loading")
+    else:
+        return f"bad example."
+
+    topath = os.path.join(UPLOAD_FOLDER, filename)
+    if not os.path.exists(topath):
+        print("copying")
+        shutil.copy(fullpath, topath)
+
+    return redirect(f"/{md5}/{filename}/")
+
+
+@app.route("/")
+@app.route("/<path:path>")
 def get_md5(path):
-    print('PATH IS:', path, os.path.split(path))
-    md5, filename, action = path.split('/')
+    print("PATH IS:", path, os.path.split(path))
+    md5, filename, action = path.split("/")
 
     outpath = os.path.join(UPLOAD_FOLDER, filename)
     success = False
     ss = None
     if os.path.exists(outpath):
         ss = sourmash.load_file_as_index(outpath)
-        ss = ss.select(moltype='DNA', ksize=51, scaled=100_000)
+        ss = ss.select(moltype="DNA", ksize=51, scaled=100_000)
         if len(ss) == 1:
             ss = list(ss.signatures())[0]
             if ss.md5sum() == md5:
@@ -109,22 +139,24 @@ def get_md5(path):
         # @CTB check that it's weighted?
         assert ss is not None
         sample_name = ss.name or "(unnamed sample)"
-        if action == 'search':
-            csv_filename = outpath + '.gather.csv'
+        if action == "search":
+            csv_filename = outpath + ".gather.csv"
             if not os.path.exists(csv_filename):
                 start = time.time()
-                status = branch.do_fastgather(outpath,
-                                              'prepare-db/animals-and-gtdb.rocksdb',
-                                              0,
-                                              51,
-                                              100_000,
-                                              'DNA',
-                                              csv_filename,
-                                              None)
+                status = branch.do_fastgather(
+                    outpath,
+                    "prepare-db/animals-and-gtdb.rocksdb",
+                    0,
+                    51,
+                    100_000,
+                    "DNA",
+                    csv_filename,
+                    None,
+                )
                 end = time.time()
 
-                print(f'branchwater gather status: {status}; time: {end - start:.2f}s')
-                if status !=0 :
+                print(f"branchwater gather status: {status}; time: {end - start:.2f}s")
+                if status != 0:
                     return "search failed, for reasons that are probably not your fault"
                 else:
                     print(f'output is in: "{csv_filename}"')
@@ -132,30 +164,35 @@ def get_md5(path):
                 print(f"using cached output in: '{csv_filename}'")
 
             gather_df = pd.read_csv(csv_filename)
-            gather_df = gather_df[gather_df['f_unique_weighted'] >= 0.1]
+            gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.1]
             if len(gather_df):
                 last_row = gather_df.tail(1).squeeze()
-                sum_weighted_found = last_row['sum_weighted_found'] 
-                total_weighted_hashes = last_row['total_weighted_hashes']
+                sum_weighted_found = last_row["sum_weighted_found"]
+                total_weighted_hashes = last_row["total_weighted_hashes"]
 
                 f_found = sum_weighted_found / total_weighted_hashes
 
-                return render_template("sample_search.html",
-                                       sample_name=sample_name,
-                                       sig=ss,
-                                       gather_df=gather_df,
-                                       f_found=f_found)
+                return render_template(
+                    "sample_search.html",
+                    sample_name=sample_name,
+                    sig=ss,
+                    gather_df=gather_df,
+                    f_found=f_found,
+                )
             else:
                 return "no matches found!"
 
-        elif action == 'download':
+        elif action == "download":
             return send_from_directory(UPLOAD_FOLDER, filename)
 
         # default
         sum_weighted_hashes = sum(ss.minhash.hashes.values())
-        return render_template("sample_index.html", sig=ss,
-                               sig_filename=filename,
-                               sample_name=sample_name,
-                               sum_weighted_hashes=sum_weighted_hashes)
+        return render_template(
+            "sample_index.html",
+            sig=ss,
+            sig_filename=filename,
+            sample_name=sample_name,
+            sum_weighted_hashes=sum_weighted_hashes,
+        )
     else:
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))

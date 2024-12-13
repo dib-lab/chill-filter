@@ -1,32 +1,26 @@
 <html><head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="static/bootstrap.min.css" integrity="sha256-+omx7xYvI+/C0kfnQmjAIW8dDbTweWpbYHWzveX4ii4=" crossorigin="anonymous">
-
-<title>chill-filter sample query</title>
+    <title>chill-filter sample screening - home page</title>
+    {% include "_header.html" %}
 </head>
 
   <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <div class="navbar-brand">
+    <main class="container">
         <h2 style="margin: 10px">chill-filter: What's in my sample?</h2>
         <p style="margin: 10px">
           Quite fast sample screening.
         </p>
-    <script defer="defer" src="static/mgnify-component/mgnify-sourmash-component.js"></script>
-
-      <!-- Intro/header -->
-
-    <div class="parent-element" style="text-align: center">
-    <hr style="border-width: 3px; border-color: black">
 
       <h4>
-       Choose a large genome or shotgun sequencing FASTA/FASTQ file below, and click submit to compress it and send it to our server!
+       Choose a large genome or shotgun sequencing FASTA/FASTQ file, and click submit to compress it and send it for screening!
       </h4>
 
       <div style="margin: 50px">
-      <mgnify-sourmash-component id="sourmash" ksize="51" scaled="100000">
-    </mgnify-sourmash-component></div>
-
+        
     <!-- Create form -->
+    <script defer="defer" src="static/mgnify-component/mgnify-sourmash-component.js"></script>
+      <mgnify-sourmash-component id="sourmash" ksize="51" scaled="100000">
+      </mgnify-sourmash-component></div>
+
     <div id="form-container"></div>
     <form id="form" style="margin: 40px" action="/sketch" method="POST">
       <div id="sketchInput"> </div>
@@ -36,16 +30,28 @@
     </form>
 
     <hr style="border-width: 3px; border-color: black">
-    <div class="parent-element" style="text-align: center">
-    <h4>
-      OR upload an existing sourmash signature at k=51 and scaled=100_000!
-      </h4>
-<form method="POST" enctype="multipart/form-data" action="/">
-  <input type=file name="sketch">
-  <input type=submit value="Submit existing sketch">
-</form>
-    </div>
 
+    <main class="container">
+    <h4>
+      OR upload an existing sourmash signature at k=51 and scaled=100,000!
+      </h4>
+    <form method="POST" enctype="multipart/form-data" action="/">
+      <input type=file name="sketch">
+      <input type=submit value="Submit existing sketch!">
+    </form>
+    </main>
+
+    <hr style="border-width: 3px; border-color: black">
+
+    <main class="container">
+      <h4>Examples:</h4>
+      <a href="/example?filename=SRR606249.k51.s100_000.sig.zip">SRR606249: A mock microbial community</a><br>
+      <a href="/example?filename=SRR5650070.k51.s100_000.sig.zip">SRR5650070: A human gut metagenome from the iHMP</a><br>
+      <a href="/example?filename=SRR12324253.k51.s100_000.sig.zip">SRR12324253: Zymo mock microbial community</a><br>
+      <a href="/example?filename=ERR1395610.k51.s100_000.sig.zip">ERR1395610: a human WGS sample</a><br>
+      <a href="/example?filename=Bu5.k51.s100_000.sig.zip">Bu5: a human WGS sample</a><br>
+      <a href="/example?filename=ERR2592340.k51.s100_000.sig.zip">ERR2592340: livestock feces sample</a><br>
+      <a href="/example?filename=ERR2245457.k51.s100_000.sig.zip">ERR2245457: sewage </a><br>
     {% include "_footer.html" %}
     
     <script>
