@@ -9,8 +9,10 @@ import pandas as pd
 import tempfile
 import time
 import gzip
+import shutil
 
 UPLOAD_FOLDER = '/tmp/chill'
+EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), '../examples/')
 
 app = Flask(__name__)
 
@@ -86,7 +88,34 @@ def sketch():
         if success:
             return redirect(f'/{md5}/{filename}/')
     return redirect(url_for('index'))
+
+
+@app.route("/example", methods=["GET"])
+def example():
+    "Retrieve an example"
+    filename = request.args['filename']
+    filename = secure_filename(filename)
+    fullpath = os.path.join(EXAMPLES_DIR, filename)
+    if not os.path.exists(fullpath):
+        return f"example file {filename} not found in examples"
     
+    ss = sourmash.load_file_as_index(fullpath)
+    ss = ss.select(moltype='DNA', ksize=51, scaled=100_000)
+    if len(ss) == 1:
+        success = True
+        ss = list(ss.signatures())[0]
+        md5 = ss.md5sum()
+        print('SUCCESS loading')
+    else:
+        return f"bad example."
+
+    topath = os.path.join(UPLOAD_FOLDER, filename)
+    if not os.path.exists(topath):
+        print("copying")
+        shutil.copy(fullpath, topath)
+
+    return redirect(f'/{md5}/{filename}/')
+
 
 @app.route('/')
 @app.route('/<path:path>')
