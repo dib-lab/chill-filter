@@ -1,67 +1,72 @@
 import os
-from flask import Flask, flash, request, redirect, url_for
-from flask import render_template, send_from_directory
-from werkzeug.utils import secure_filename
-import sourmash
-from sourmash import save_signatures_to_json
-from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
-import pandas as pd
 import tempfile
 import time
 import gzip
 import shutil
 
+from flask import Flask, flash, request, redirect, url_for
+from flask import render_template, send_from_directory
+from werkzeug.utils import secure_filename
+
+import pandas as pd
+
+import sourmash
+from sourmash import save_signatures_to_json
+from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
+
+MOLTYPE="DNA"
+KSIZE=51
+SCALED=100_000
 UPLOAD_FOLDER = "/tmp/chill"
 EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
 
 app = Flask(__name__)
 
 
+def load_sig(fullpath):
+    try:
+        ss = sourmash.load_file_as_index(fullpath)
+        ss = ss.select(moltype=MOLTYPE, ksize=KSIZE, scaled=SCALED)
+        if len(ss) == 1:
+            ss = list(ss.signatures())[0]
+            return ss
+    except:
+        pass
+
+    return None
+
 @app.route("/", methods=["GET", "POST"])
 def index():
-    print(request.method)
     if request.method == "POST":
-        print("FORM:", request.form.keys())
-        print("FILES:", request.files.keys())
         # check if the post request has the file part
         if "sketch" not in request.files:
             flash("No file part")
             return redirect(request.url)
         file = request.files["sketch"]
+
         # If the user does not select a file, the browser submits an
         # empty file without a filename.
-        print(file.filename)
         if file.filename == "":
             flash("No selected file")
             return redirect(request.url)
+
         if file:
-            success = False
             filename = secure_filename(file.filename)
             outpath = os.path.join(UPLOAD_FOLDER, filename)
             file.save(outpath)
 
-            try:
-                ss = sourmash.load_file_as_index(outpath)
-                ss = ss.select(moltype="DNA", ksize=51, scaled=100_000)
-                if len(ss) == 1:
-                    success = True
-                    ss = list(ss.signatures())[0]
-                    md5 = ss.md5sum()
-                    print("SUCCESS")
-            except:
-                pass
-
-            if success:
+            ss = load_sig(outpath)
+            if ss:
+                md5 = ss.md5sum()
                 return redirect(f"/{md5}/{filename}/")
+
+    # default
     return render_template("index.html")
 
 
 @app.route("/sketch", methods=["GET", "POST"])
 def sketch():
-    print(request.method)
     if request.method == "POST":
-        print("FORM:", request.form.keys())
-        print("FILES:", request.files.keys())
         # check if the post request has the file part
         if "signature" not in request.form:
             flash("No file part")
@@ -74,20 +79,12 @@ def sketch():
         with gzip.open(outpath, "wt") as fp:
             fp.write(f"[{sig_json}]")
 
-        try:
-            ss = sourmash.load_file_as_index(outpath)
-            ss = ss.select(moltype="DNA", ksize=51, scaled=100_000)
-            if len(ss) == 1:
-                success = True
-                ss = list(ss.signatures())[0]
-                md5 = ss.md5sum()
-                print("SUCCESS")
-        except:
-            raise
-            pass
 
-        if success:
+        ss = load_sig(outpath)
+        if ss:
+            md5 = ss.md5sum()
             return redirect(f"/{md5}/{filename}/")
+
     return redirect(url_for("index"))
 
 
@@ -96,26 +93,23 @@ def example():
     "Retrieve an example"
     filename = request.args["filename"]
     filename = secure_filename(filename)
-    fullpath = os.path.join(EXAMPLES_DIR, filename)
-    if not os.path.exists(fullpath):
-        return f"example file {filename} not found in examples"
+    frompath = os.path.join(EXAMPLES_DIR, filename)
+    if not os.path.exists(frompath):
+        return f"example file {filename} not found in examples/"
 
-    ss = sourmash.load_file_as_index(fullpath)
-    ss = ss.select(moltype="DNA", ksize=51, scaled=100_000)
-    if len(ss) == 1:
-        success = True
-        ss = list(ss.signatures())[0]
-        md5 = ss.md5sum()
-        print("SUCCESS loading")
-    else:
+    ss = load_sig(frompath)
+    if ss is None:
         return f"bad example."
 
+    md5 = ss.md5sum()
+
+    # now build the filename & make sure it's in the upload dir.
     topath = os.path.join(UPLOAD_FOLDER, filename)
     if not os.path.exists(topath):
         print("copying")
-        shutil.copy(fullpath, topath)
+        shutil.copy(frompath, topath)
 
-    return redirect(f"/{md5}/{filename}/")
+    return redirect(f"/{md5}/{filename}/search")
 
 
 @app.route("/")
@@ -128,12 +122,9 @@ def get_md5(path):
     success = False
     ss = None
     if os.path.exists(outpath):
-        ss = sourmash.load_file_as_index(outpath)
-        ss = ss.select(moltype="DNA", ksize=51, scaled=100_000)
-        if len(ss) == 1:
-            ss = list(ss.signatures())[0]
-            if ss.md5sum() == md5:
-                success = True
+        ss = load_sig(outpath)
+        if ss and ss.md5sum() == md5:
+            success = True
 
     if success:
         # @CTB check that it's weighted?
@@ -143,15 +134,16 @@ def get_md5(path):
             csv_filename = outpath + ".gather.csv"
             if not os.path.exists(csv_filename):
                 start = time.time()
-                status = branch.do_fastgather(
+                status = branch.do_fastmultigather(
                     outpath,
                     "prepare-db/animals-and-gtdb.rocksdb",
                     0,
-                    51,
-                    100_000,
-                    "DNA",
+                    KSIZE,
+                    SCALED,
+                    MOLTYPE,
                     csv_filename,
-                    None,
+                    False,
+                    False
                 )
                 end = time.time()
 
@@ -163,6 +155,7 @@ def get_md5(path):
             else:
                 print(f"using cached output in: '{csv_filename}'")
 
+            # load/process
             gather_df = pd.read_csv(csv_filename)
             gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.1]
             if len(gather_df):
