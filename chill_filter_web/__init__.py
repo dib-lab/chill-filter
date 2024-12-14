@@ -136,7 +136,8 @@ def get_md5(path):
                 start = time.time()
                 status = branch.do_fastmultigather(
                     outpath,
-                    "prepare-db/animals-and-gtdb.rocksdb",
+#                    "prepare-db/animals-and-gtdb.rocksdb",
+                    "prepare-db/plants+animals+gtdb.rocksdb",
                     0,
                     KSIZE,
                     SCALED,
@@ -157,7 +158,7 @@ def get_md5(path):
 
             # load/process
             gather_df = pd.read_csv(csv_filename)
-            gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.1]
+            gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
             if len(gather_df):
                 last_row = gather_df.tail(1).squeeze()
                 sum_weighted_found = last_row["sum_weighted_found"]

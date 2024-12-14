@@ -11,6 +11,7 @@ GENOMES = ['bosTau9',
 rule all:
     input:
         'animals-and-gtdb.rocksdb',
+        'plants+animals+gtdb.rocksdb',
 
 rule index_animals_and_gtdb:
     input:
@@ -27,6 +28,27 @@ rule animals_and_gtdb:
         'outputs/all-gtdb-rs220.k51.100k.sig.zip',
     output:
         'animals-and-gtdb.mf.csv',
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+
+rule index_plants_animals_and_gtdb:
+    input:
+        "plants+animals+gtdb.mf.csv",
+    output:
+        protected(directory("plants+animals+gtdb.rocksdb")),
+    shell: """
+        sourmash scripts index {input} -o {output} -k 51
+    """
+
+rule plants_animals_and_gtdb:
+    input:
+        expand('outputs/{g}.k51.100k.sig.zip', g=GENOMES),
+        'outputs/all-gtdb-rs220.k51.100k.sig.zip',
+        'downloads/genbank-plants-merged-2024.07.sig.zip',
+    output:
+        'plants+animals+gtdb.mf.csv',
     shell: """
         sourmash sig collect -F csv {input} -o {output} --abspath
     """
