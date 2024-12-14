@@ -134,7 +134,7 @@ def get_md5(path):
             csv_filename = outpath + ".gather.csv"
             if not os.path.exists(csv_filename):
                 start = time.time()
-                status = branch.do_fastgather(
+                status = branch.do_fastmultigather(
                     outpath,
                     "prepare-db/animals-and-gtdb.rocksdb",
                     0,
@@ -142,7 +142,8 @@ def get_md5(path):
                     SCALED,
                     MOLTYPE,
                     csv_filename,
-                    None,
+                    False,
+                    False
                 )
                 end = time.time()
 
