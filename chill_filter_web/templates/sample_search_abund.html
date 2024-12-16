@@ -1,0 +1,43 @@
+<!- template: sample_search_abund.html -->
+<head>
+  <title>search of {{ sample_name }} - chill-filter</title>
+  {% include "_header.html" %}
+{% include "_header.html" %}
+</head>
+<body>
+<main class="container">
+
+<h2>Sample search summary for: {{ sample_name }}</h2>
+<p>
+This looks like a set of reads, right?
+<p>
+  
+Based on the search results below, we estimate that at least <b>{{ "{:.1f}".format(f_found * 100) }}%</b> of your sequencing data will map to known reference genomes.
+<p>
+  Your sample is about <b>{{ "{:.1f}".format((1 - f_found) * 100) }}% unknown</b>. This could be new sequence and/or sequencing errors.
+<p>
+(<b>{{ "{:.1f}".format(f_unknown_high*  (1 - f_found) * 100) }}%</b> of the sample is unknown and high abundance, so that's probably not sequencing error.)
+
+<h2>Sample breakdown</h2>
+
+<table border=1>
+  <tr>
+    <th> <b>Percent assigned</b> </th>
+    <th> <b>Reference genome or collection </b></th>
+    <th> <b>Estimated sequencing depth in sample</b></tr>
+  {% for item in gather_df.to_dict(orient='records') %}
+   <tr>
+     <td>{{ '{:.1f}'.format(item['f_unique_weighted'] * 100) }}% </td>
+     <td> {{ item['match_name'] }}  </td>
+     <td>{{ '{:.0f}'.format(item['median_abund']) }}x </td>
+   </tr>
+  {% endfor %}
+</table>
+
+<a href='./'>Return to sample page</a> | <a href="./download_csv">Download results</a>
+
+{% include "_footer.html" %}
+</main>
+</body>
+
+</html>

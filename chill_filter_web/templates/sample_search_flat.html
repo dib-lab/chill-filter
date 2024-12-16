@@ -1,4 +1,4 @@
-<!- template: sample_search.html -->
+<!- template: sample_search_flat.html -->
 <head>
   <title>search of {{ sample_name }} - chill-filter</title>
   {% include "_header.html" %}
@@ -8,12 +8,14 @@
 <main class="container">
 
 <h2>Sample search summary for: {{ sample_name }}</h2>
-
-total sample known: <b>{{ "{:.1f}".format(f_found * 100) }}%</b>
 <p>
-(This is an estimate for how much of your sequencing data will map to known reference genomes.)
+This looks like an assembly, right?
 <p>
-Your sample is {{ "{:.1f}".format((1 - f_found) * 100) }}% unknown. This is a combined estimate of genomic sequence not in our database, entirely new genomic sequence, SNPs/polymorphisms, or erroneous sequence.
+  Based on the results below, we estimate that at least
+  <b>{{ "{:.1f}".format(f_found * 100) }}%</b>
+  of your contigs will align to a known reference genome.
+<p>
+Your sample is about {{ "{:.1f}".format((1 - f_found) * 100) }}% unknown. This is likely to be novel sequence!
 
 <h2>Sample breakdown</h2>
 
@@ -29,13 +31,6 @@ Your sample is {{ "{:.1f}".format((1 - f_found) * 100) }}% unknown. This is a co
 
 <p>
   
-<h2>TODO</h2>
-<ul>
-  <li> high abundance, low abundance split!
-</ul>
-
-<p>
-
 <a href='./'>Return to sample page</a>
   
 
