@@ -14,9 +14,9 @@ import sourmash
 from sourmash import save_signatures_to_json
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 
-MOLTYPE="DNA"
-KSIZE=51
-SCALED=100_000
+MOLTYPE = "DNA"
+KSIZE = 51
+SCALED = 100_000
 UPLOAD_FOLDER = "/tmp/chill"
 EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
 
@@ -34,6 +34,7 @@ def load_sig(fullpath):
         pass
 
     return None
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -78,7 +79,6 @@ def sketch():
         outpath = os.path.join(UPLOAD_FOLDER, filename)
         with gzip.open(outpath, "wt") as fp:
             fp.write(f"[{sig_json}]")
-
 
         ss = load_sig(outpath)
         if ss:
@@ -136,7 +136,6 @@ def get_md5(path):
                 start = time.time()
                 status = branch.do_fastmultigather(
                     outpath,
-#                    "prepare-db/animals-and-gtdb.rocksdb",
                     "prepare-db/plants+animals+gtdb.rocksdb",
                     0,
                     KSIZE,
@@ -144,7 +143,7 @@ def get_md5(path):
                     MOLTYPE,
                     csv_filename,
                     False,
-                    False
+                    False,
                 )
                 end = time.time()
 
