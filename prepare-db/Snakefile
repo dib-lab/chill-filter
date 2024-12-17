@@ -10,8 +10,8 @@ GENOMES = ['bosTau9',
 
 rule all:
     input:
-        'animals-and-gtdb.rocksdb',
         'plants+animals+gtdb.rocksdb',
+        'plants+animals+gtdb.merged.sig.zip',
 
 rule index_animals_and_gtdb:
     input:
@@ -40,6 +40,15 @@ rule index_plants_animals_and_gtdb:
         protected(directory("plants+animals+gtdb.rocksdb")),
     shell: """
         sourmash scripts index {input} -o {output} -k 51
+    """
+
+rule merge_plants_animals_gtdb:
+    input:
+        "plants+animals+gtdb.mf.csv",
+    output:
+        'plants+animals+gtdb.merged.sig.zip',
+    shell: """
+        sourmash sig merge -k 51 {input} -o {output} --flatten
     """
 
 rule plants_animals_and_gtdb:
