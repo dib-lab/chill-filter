@@ -69,10 +69,11 @@ def sig_is_assembly(ss):
 
     # count the number > 1 in abundance
     n_above_1 = sum(1 for (hv, ha) in mh.hashes.items() if ha > 1)
-    print('ZZZ2', n_above_1, len(mh), n_above_1/len(mh))
+    f_above_1 = n_above_1/len(mh)
+    print(f'n_above_1: {n_above_1}, of {len(mh)}, f={f_above_1:.3}')
 
-    # more than 10% > 1? => probably not assemblyy
-    if n_above_1 / len(mh) > 0.1:
+    # more than 10% > 1? => probably not assembly
+    if f_above_1 > 0.1:
         return False
 
     # nope! assembly!
@@ -208,21 +209,19 @@ def get_md5(path):
                 print(f"using cached output in: '{csv_filename}'")
 
             gather_df = pd.read_csv(csv_filename)
+            gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+
+            gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
 
             # process abundance-weighted matches
             if not sig_is_assembly(ss):
                 f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss,
                                                                            search_db)
-                print('YYY', f_unknown_high, f_unknown_low)
 
-                gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
-
-                gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
                 if len(gather_df):
                     last_row = gather_df.tail(1).squeeze()
                     sum_weighted_found = last_row["sum_weighted_found"]
                     total_weighted_hashes = last_row["total_weighted_hashes"]
-                    
 
                     f_found = sum_weighted_found / total_weighted_hashes
 
@@ -240,7 +239,6 @@ def get_md5(path):
             # process flat matching (assembly)
             else:
                 print('running flat')
-                gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
                 if len(gather_df):
                     last_row = gather_df.tail(1).squeeze()
                     f_found = gather_df['f_unique_to_query'].sum()
@@ -269,3 +267,11 @@ def get_md5(path):
         )
     else:
         return redirect(url_for("index"))
+
+@app.route("/faq")
+def faq():
+    return render_template("faq.html")
+
+@app.route("/guide")
+def guide():
+    return render_template("guide.html")
