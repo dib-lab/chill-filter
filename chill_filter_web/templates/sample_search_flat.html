@@ -23,7 +23,7 @@ Your sample is about {{ "{:.1f}".format((1 - f_found) * 100) }}% unknown. This i
   <tr> <th> Percent assigned </th> <th> Reference genome or collection </th> </tr>
   {% for item in gather_df.to_dict(orient='records') %}
    <tr>
-     <td>{{ '{:.1f}'.format(item['f_unique_weighted'] * 100) }}% </td>
+     <td>{{ item['f_unique_weighted']|percent }} </td>
      <td> {{ item['match_name'] }}  </td>
    </tr>
   {% endfor %}

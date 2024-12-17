@@ -27,6 +27,11 @@ for db in sourmash_databases:
 print(f'...done! {time.time() - start:.1f}s')
 
 app = Flask(__name__)
+jinja_env = app.jinja_env
+
+def percent(value):
+    return f"{value*100:.1f}%"
+jinja_env.filters['percent'] = percent
 
 def load_sig(fullpath):
     try:

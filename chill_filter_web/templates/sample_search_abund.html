@@ -27,9 +27,9 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
     <th> <b>Estimated sequencing depth in sample</b></tr>
   {% for item in gather_df.to_dict(orient='records') %}
    <tr>
-     <td>{{ '{:.1f}'.format(item['f_unique_weighted'] * 100) }}% </td>
+     <td> {{ item['f_unique_weighted']|percent }}</td>
      <td> {{ item['match_description'] }}  </td>
-     <td>{{ '{:.0f}'.format(item['median_abund']) }}x </td>
+     <td>{{ item['median_abund']|int }}x </td>
    </tr>
   {% endfor %}
 </table>
