@@ -14,13 +14,17 @@ import sourmash
 from sourmash import save_signatures_to_json
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 
-MOLTYPE = "DNA"
-KSIZE = 51
-SCALED = 100_000
 UPLOAD_FOLDER = "/tmp/chill"
 EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
-SIGNATURES = "prepare-db/plants+animals+gtdb.mf.csv"
-DATABASE = "prepare-db/plants+animals+gtdb.rocksdb"
+
+from .database_info import databases as sourmash_databases
+from .database_info import MOLTYPE, KSIZE, SCALED
+
+start = time.time()
+print(f'loading dbs:')
+for db in sourmash_databases:
+    db.load()
+print(f'...done! {time.time() - start:.1f}s')
 
 app = Flask(__name__)
 
@@ -37,11 +41,11 @@ def load_sig(fullpath):
     return None
 
 
-def run_gather(outpath, csv_filename):
+def run_gather(outpath, csv_filename, db_info):
     start = time.time()
     status = branch.do_fastmultigather(
         outpath,
-        DATABASE,
+        db_info.filename,
         0,
         KSIZE,
         SCALED,
@@ -75,28 +79,9 @@ def sig_is_assembly(ss):
     return True
 
 
-merged_hashes = None
-def build_merged_sig():
-    global merged_hashes
-    if merged_hashes is None:
-        ## build a merged sig - CTB hackity hack
-        print('building merged sig from signatures...')
-        idx = sourmash.load_file_as_index(SIGNATURES)
-        merged_mh = None
-        for ss in idx.signatures():
-            if merged_mh is None:
-                merged_mh = ss.minhash.copy_and_clear().flatten().to_mutable()
-            else:
-                merged_mh += ss.minhash.flatten()
-        merged_hashes = merged_mh.hashes
-        print('...done!')
-    return merged_hashes
-
-def estimate_weight_of_unknown(ss, *, CUTOFF=5):
-    merged_hashes = build_merged_sig()
+def estimate_weight_of_unknown(ss, db, *, CUTOFF=5):
     mh = ss.minhash
-
-    print(len(mh))
+    merged_hashes = db.merged_hashes
 
     unknown = [ (hv, ha) for (hv, ha) in mh.hashes.items() if ha not in merged_hashes ]
     sum_unknown = sum( ha for (hv, ha) in unknown )
@@ -200,12 +185,21 @@ def get_md5(path):
         assert ss is not None
         sample_name = ss.name or "(unnamed sample)"
         if action == 'download_csv':
-            csv_filename = filename + ".gather.csv"
+            csv_filename = filename + "x.all.gather.csv" # @CTB
             return send_from_directory(UPLOAD_FOLDER, csv_filename)
         elif action == "search":
-            csv_filename = outpath + ".gather.csv"
+            search_db = None
+            for db in sourmash_databases:
+                if db.default:
+                    search_db = db
+                    break
+
+            if search_db is None:
+                raise Exception("no default search DB?!")
+
+            csv_filename = f"{outpath}.x.{search_db.shortname}.gather.csv"
             if not os.path.exists(csv_filename):
-                status = run_gather(outpath, csv_filename)
+                status = run_gather(outpath, csv_filename, search_db)
                 if status != 0:
                     return "search failed, for reasons that are probably not your fault"
                 else:
@@ -217,10 +211,13 @@ def get_md5(path):
 
             # process abundance-weighted matches
             if not sig_is_assembly(ss):
-                f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss)
+                f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss,
+                                                                           search_db)
                 print('YYY', f_unknown_high, f_unknown_low)
 
                 gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+
+                gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
                 if len(gather_df):
                     last_row = gather_df.tail(1).squeeze()
                     sum_weighted_found = last_row["sum_weighted_found"]

@@ -28,7 +28,7 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
   {% for item in gather_df.to_dict(orient='records') %}
    <tr>
      <td>{{ '{:.1f}'.format(item['f_unique_weighted'] * 100) }}% </td>
-     <td> {{ item['match_name'] }}  </td>
+     <td> {{ item['match_description'] }}  </td>
      <td>{{ '{:.0f}'.format(item['median_abund']) }}x </td>
    </tr>
   {% endfor %}
