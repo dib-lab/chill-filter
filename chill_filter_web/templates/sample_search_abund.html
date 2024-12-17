@@ -9,7 +9,7 @@
 
 <h2>Sample search summary for: {{ sample_name }}</h2>
 <p>
-This looks like a set of reads, right?
+Based on the abundance profile, this looks like a set of reads.
 <p>
   
 Based on the search results below, we estimate that at least <b>{{ "{:.1f}".format(f_found * 100) }}%</b> of your sequencing data will map to known reference genomes.
@@ -27,7 +27,7 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
     <th> <b>Estimated sequencing depth in sample</b></tr>
   {% for item in gather_df.to_dict(orient='records') %}
    <tr>
-     <td> {{ item['f_unique_weighted']|percent }}</td>
+     <td> {{ item['f_unique_weighted']|percent }} ({{ item|unique_weighted_bp }})  </td>
      <td> {{ item['match_description'] }}  </td>
      <td>{{ item['median_abund']|int }}x </td>
    </tr>

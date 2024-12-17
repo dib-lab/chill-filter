@@ -9,7 +9,7 @@
 
 <h2>Sample search summary for: {{ sample_name }}</h2>
 <p>
-This looks like an assembly, right?
+Based on the abundance profile, this looks like an assembly.
 <p>
   Based on the results below, we estimate that at least
   <b>{{ "{:.1f}".format(f_found * 100) }}%</b>
@@ -20,11 +20,11 @@ Your sample is about {{ "{:.1f}".format((1 - f_found) * 100) }}% unknown. This i
 <h2>Sample breakdown</h2>
 
 <table border=1>
-  <tr> <th> Percent assigned </th> <th> Reference genome or collection </th> </tr>
+  <tr> <th> <b>Percent assigned</b> </th> <th> <b>Reference genome or collection</b> </th> </tr>
   {% for item in gather_df.to_dict(orient='records') %}
    <tr>
-     <td>{{ item['f_unique_weighted']|percent }} </td>
-     <td> {{ item['match_name'] }}  </td>
+     <td>{{ item['f_unique_weighted']|percent }} ({{ item|unique_flat_bp }})</td>
+     <td> {{ item['match_description'] }}  </td>
    </tr>
   {% endfor %}
 </table>
