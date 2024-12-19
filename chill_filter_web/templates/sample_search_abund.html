@@ -16,7 +16,7 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
 <p>
   Your sample is about <b>{{ "{:.1f}".format((1 - f_found) * 100) }}% unknown</b>. This could be new sequence and/or sequencing errors.
 <p>
-(<b>{{ "{:.1f}".format(f_unknown_high*  (1 - f_found) * 100) }}%</b> of the sample is unknown and high abundance, so that's probably not sequencing error.)
+<!-- (<b>{{ "{:.1f}".format(f_unknown_high*  (1 - f_found) * 100) }}%</b> of the sample is unknown and high abundance, so that's probably not sequencing error.) -->
 
 <h2>Sample breakdown</h2>
 
@@ -34,7 +34,9 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
   {% endfor %}
 </table>
 
-<a href='./'>Return to sample page</a> | <a href="./download_csv">Download results</a>
+<a href='./' style="color:white"><button>Go to sample information page</a></button>
+<a href="./download_csv" style="color:white"><button>Download CSV</button></a>
+<a href="/" style="color:white"><button>Submit a new sample</button></a>
 
 {% include "_footer.html" %}
 </main>
