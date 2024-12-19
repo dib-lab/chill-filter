@@ -9,14 +9,14 @@
 
 <h2>Sample search summary for: {{ sample_name }}</h2>
 <p>
-This looks like a set of reads, right?
+Based on the abundance profile, this looks like a set of reads.
 <p>
   
 Based on the search results below, we estimate that at least <b>{{ "{:.1f}".format(f_found * 100) }}%</b> of your sequencing data will map to known reference genomes.
 <p>
   Your sample is about <b>{{ "{:.1f}".format((1 - f_found) * 100) }}% unknown</b>. This could be new sequence and/or sequencing errors.
 <p>
-(<b>{{ "{:.1f}".format(f_unknown_high*  (1 - f_found) * 100) }}%</b> of the sample is unknown and high abundance, so that's probably not sequencing error.)
+<!-- (<b>{{ "{:.1f}".format(f_unknown_high*  (1 - f_found) * 100) }}%</b> of the sample is unknown and high abundance, so that's probably not sequencing error.) -->
 
 <h2>Sample breakdown</h2>
 
@@ -27,14 +27,16 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
     <th> <b>Estimated sequencing depth in sample</b></tr>
   {% for item in gather_df.to_dict(orient='records') %}
    <tr>
-     <td>{{ '{:.1f}'.format(item['f_unique_weighted'] * 100) }}% </td>
+     <td> {{ item['f_unique_weighted']|percent }} ({{ item|unique_weighted_bp }})  </td>
      <td> {{ item['match_description'] }}  </td>
-     <td>{{ '{:.0f}'.format(item['median_abund']) }}x </td>
+     <td>{{ item['median_abund']|int }}x </td>
    </tr>
   {% endfor %}
 </table>
 
-<a href='./'>Return to sample page</a> | <a href="./download_csv">Download results</a>
+<a href='./' style="color:white"><button>Go to sample information page</a></button>
+<a href="./download_csv" style="color:white"><button>Download CSV</button></a>
+<a href="/" style="color:white"><button>Submit a new sample</button></a>
 
 {% include "_footer.html" %}
 </main>

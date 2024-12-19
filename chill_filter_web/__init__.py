@@ -20,13 +20,42 @@ EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
 from .database_info import databases as sourmash_databases
 from .database_info import MOLTYPE, KSIZE, SCALED
 
-start = time.time()
-print(f'loading dbs:')
-for db in sourmash_databases:
-    db.load()
-print(f'...done! {time.time() - start:.1f}s')
+if 0:
+    start = time.time()
+    print(f'loading dbs:')
+    for db in sourmash_databases:
+        db.load()
+        print(f'...done! {time.time() - start:.1f}s')
 
 app = Flask(__name__)
+jinja_env = app.jinja_env
+
+def percent(value):
+    return f"{value*100:.1f}%"
+jinja_env.filters['percent'] = percent
+
+def format_bp(bp):
+    "Pretty-print bp information."
+    bp = float(bp)
+    if bp < 500:
+        return f"{bp:.0f} bp"
+    elif bp <= 500e3:
+        return f"{round(bp / 1e3, 1):.1f} kbp"
+    elif bp < 500e6:
+        return f"{round(bp / 1e6, 1):.1f} Mbp"
+    elif bp < 500e9:
+        return f"{round(bp / 1e9, 1):.1f} Gbp"
+    return f"??? {bp}"
+jinja_env.filters['format_bp'] = format_bp
+
+def unique_weighted_bp(item):
+    return format_bp(item['n_unique_weighted_found'] * item['scaled'])
+jinja_env.filters['unique_weighted_bp'] = unique_weighted_bp
+
+def unique_flat_bp(item):
+    return format_bp(item['unique_intersect_bp'])
+jinja_env.filters['unique_flat_bp'] = unique_flat_bp
+
 
 def load_sig(fullpath):
     try:
@@ -69,10 +98,11 @@ def sig_is_assembly(ss):
 
     # count the number > 1 in abundance
     n_above_1 = sum(1 for (hv, ha) in mh.hashes.items() if ha > 1)
-    print('ZZZ2', n_above_1, len(mh), n_above_1/len(mh))
+    f_above_1 = n_above_1/len(mh)
+    print(f'n_above_1: {n_above_1}, of {len(mh)}, f={f_above_1:.3}')
 
-    # more than 10% > 1? => probably not assemblyy
-    if n_above_1 / len(mh) > 0.1:
+    # more than 10% > 1? => probably not assembly
+    if f_above_1 > 0.1:
         return False
 
     # nope! assembly!
@@ -113,8 +143,8 @@ def index():
 
             ss = load_sig(outpath)
             if ss:
-                md5 = ss.md5sum()
-                return redirect(f"/{md5}/{filename}/")
+                md5 = ss.md5sum()[:8]
+                return redirect(f"/{md5}/{filename}/search")
 
     # default
     return render_template("index.html")
@@ -137,8 +167,8 @@ def sketch():
 
         ss = load_sig(outpath)
         if ss:
-            md5 = ss.md5sum()
-            return redirect(f"/{md5}/{filename}/")
+            md5 = ss.md5sum()[:8]
+            return redirect(f"/{md5}/{filename}/search")
 
     return redirect(url_for("index"))
 
@@ -156,7 +186,7 @@ def example():
     if ss is None:
         return f"bad example."
 
-    md5 = ss.md5sum()
+    md5 = ss.md5sum()[:8]
 
     # now build the filename & make sure it's in the upload dir.
     topath = os.path.join(UPLOAD_FOLDER, filename)
@@ -178,14 +208,14 @@ def get_md5(path):
     ss = None
     if os.path.exists(outpath):
         ss = load_sig(outpath)
-        if ss and ss.md5sum() == md5:
+        if ss and ss.md5sum()[:8] == md5:
             success = True
 
     if success:
         assert ss is not None
         sample_name = ss.name or "(unnamed sample)"
         if action == 'download_csv':
-            csv_filename = filename + "x.all.gather.csv" # @CTB
+            csv_filename = filename + ".x.all.gather.csv" # @CTB
             return send_from_directory(UPLOAD_FOLDER, csv_filename)
         elif action == "search":
             search_db = None
@@ -208,21 +238,20 @@ def get_md5(path):
                 print(f"using cached output in: '{csv_filename}'")
 
             gather_df = pd.read_csv(csv_filename)
+            gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+
+            gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
 
             # process abundance-weighted matches
             if not sig_is_assembly(ss):
-                f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss,
-                                                                           search_db)
-                print('YYY', f_unknown_high, f_unknown_low)
+                #f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss,
+                #         search_db)
+                f_unknown_high, f_unknown_low = 0, 0
 
-                gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
-
-                gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
                 if len(gather_df):
                     last_row = gather_df.tail(1).squeeze()
                     sum_weighted_found = last_row["sum_weighted_found"]
                     total_weighted_hashes = last_row["total_weighted_hashes"]
-                    
 
                     f_found = sum_weighted_found / total_weighted_hashes
 
@@ -240,7 +269,6 @@ def get_md5(path):
             # process flat matching (assembly)
             else:
                 print('running flat')
-                gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
                 if len(gather_df):
                     last_row = gather_df.tail(1).squeeze()
                     f_found = gather_df['f_unique_to_query'].sum()
@@ -269,3 +297,11 @@ def get_md5(path):
         )
     else:
         return redirect(url_for("index"))
+
+@app.route("/faq")
+def faq():
+    return render_template("faq.html")
+
+@app.route("/guide")
+def guide():
+    return render_template("guide.html")

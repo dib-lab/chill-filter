@@ -12,44 +12,36 @@ rule all:
     input:
         'plants+animals+gtdb.rocksdb',
         'plants+animals+gtdb.merged.sig.zip',
+        'gtdb.rocksdb',
+        'gtdb.merged.sig.zip',
 
-rule index_animals_and_gtdb:
+rule index_manifest:
     input:
-        "animals-and-gtdb.mf.csv",
+        "{name}.mf.csv",
     output:
-        protected(directory("animals-and-gtdb.rocksdb")),
+        protected(directory("{name}.rocksdb")),
     shell: """
         sourmash scripts index {input} -o {output} -k 51
     """
 
-rule animals_and_gtdb:
+rule merge_manifest:
     input:
-        expand('outputs/{g}.k51.100k.sig.zip', g=GENOMES),
+        "{name}.mf.csv",
+    output:
+        '{name}.merged.sig.zip',
+    shell: """
+        sourmash sig merge -k 51 {input} -o {output} --flatten
+    """
+
+rule gtdb:
+    input:
         'outputs/all-gtdb-rs220.k51.100k.sig.zip',
     output:
-        'animals-and-gtdb.mf.csv',
+        'gtdb.mf.csv',
     shell: """
         sourmash sig collect -F csv {input} -o {output} --abspath
     """
 
-
-rule index_plants_animals_and_gtdb:
-    input:
-        "plants+animals+gtdb.mf.csv",
-    output:
-        protected(directory("plants+animals+gtdb.rocksdb")),
-    shell: """
-        sourmash scripts index {input} -o {output} -k 51
-    """
-
-rule merge_plants_animals_gtdb:
-    input:
-        "plants+animals+gtdb.mf.csv",
-    output:
-        'plants+animals+gtdb.merged.sig.zip',
-    shell: """
-        sourmash sig merge -k 51 {input} -o {output} --flatten
-    """
 
 rule plants_animals_and_gtdb:
     input:
