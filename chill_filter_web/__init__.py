@@ -3,6 +3,7 @@ import tempfile
 import time
 import gzip
 import shutil
+import glob
 
 from flask import Flask, flash, request, redirect, url_for
 from flask import render_template, send_from_directory
@@ -14,7 +15,13 @@ import sourmash
 from sourmash import save_signatures_to_json
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 
-UPLOAD_FOLDER = "/tmp/chill"
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__),
+                             "./chill-data")
+try:
+    os.mkdir(UPLOAD_FOLDER)
+except FileExistsError:
+    pass
+
 EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
 
 from .database_info import databases as sourmash_databases
@@ -285,6 +292,14 @@ def get_md5(path):
 
         elif action == "download":
             return send_from_directory(UPLOAD_FOLDER, filename)
+        elif action == "delete":
+            file_list = glob.glob(f"{outpath}.*.csv")
+            for filename in file_list + [outpath]:
+                try:
+                    os.unlink(filename)
+                except:
+                    pass
+            return redirect(url_for("index"))
 
         # default
         sum_weighted_hashes = sum(ss.minhash.hashes.values())
