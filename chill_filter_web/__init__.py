@@ -306,5 +306,18 @@ def faq():
 def guide():
     return render_template("guide.html")
 
-from .__main__ import create_app
+@app.route("/favicon.ico")
+def favicon():
+    return ""
 
+def create_app():
+    # Quick test configuration. Please use proper Flask configuration options
+    # in production settings, and use a separate file or environment variables
+    # to manage the secret key!
+    app.secret_key = "super secret key"
+    app.config["SESSION_TYPE"] = "filesystem"
+
+    # sess.init_app(app)
+
+    app.debug = True
+    return app

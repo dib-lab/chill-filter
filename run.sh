@@ -1,4 +1,4 @@
 #! /bin/bash
 source ~/miniforge3/etc/profile.d/conda.sh
 conda activate chill
-python -m chill_filter_web -p 5000 --host 0.0.0.0
+gunicorn -w 4 -b localhost:5000 chill_filter_web:app
