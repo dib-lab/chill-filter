@@ -7,8 +7,36 @@
     <main class="container">
       <h1>Frequently Asked Questions - chill-filter</h1>
 
-      <h4>How can I see which specific microbes are in my sample?</h4>
-      You will be able to, eventually!
+      (If you have a question that's not answered below, ask it <a href='https://github.com/dib-lab/chill-filter'>here!</a>)
+      <p>
+      <h4>When I upload my sample, what is being uploaded?!</h4>
+
+      A k-mer summary (or sketch) of your sample is calculated
+      locally, and then uploaded to the chill-filter Web site.
+      This summary is typically under a megabyte in size, even for
+      large shotgun data sets; you can download it from the chill-filter
+      site if you want to see more.
+      <p>
+      To calculate the sketch locally, chill-filter uses in-browser
+      k-mer sketching, provided by
+      <a href='https://github.com/sourmash-bio/branchwater/tree/main/app/static'>the branchwater project</a>.
+      <p>
+        This also means that chill-filter doesn't "see" your reads, or the
+        complete data set; it only has access to the sketch. And you can delete
+        your sketch at any time.
+      <p>
+        For more information on sketching, as well as an over-abundance of
+        technical details, please see <a href="https://sourmash.readthedocs.io/">the sourmash documentation</a>.
+
+      <h4>How can I see which specific genomes are in my sample?</h4>
+      You will be able to, eventually! For now, you'll have follow up on
+      our sequence composition report yourself.
+
+      <h4>I've downloaded a CSV results file; how do I interpret it?</h4>
+
+      chill-filter uses <tt>sourmash gather</tt> to calculate the results.
+      See <a href="https://sourmash.readthedocs.io/en/latest/classifying-signatures.html#appendix-a-how-sourmash-gather-works">the sourmash gather documentation</a> for more information on the algorithm and the results file!</a>
+
 {% include "_footer.html" %}
     </main>
    </body>
