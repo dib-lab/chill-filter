@@ -9,3 +9,4 @@ dependencies:
  - snakemake-minimal
  - sourmash_plugin_branchwater
  - pandas
+ - gunicorn
