@@ -14,7 +14,13 @@ import sourmash
 from sourmash import save_signatures_to_json
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 
-UPLOAD_FOLDER = "/tmp/chill"
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__),
+                             "./chill-data")
+try:
+    os.mkdir(UPLOAD_FOLDER)
+except FileExistsError:
+    pass
+
 EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
 
 from .database_info import databases as sourmash_databases
