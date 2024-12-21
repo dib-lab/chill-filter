@@ -305,3 +305,6 @@ def faq():
 @app.route("/guide")
 def guide():
     return render_template("guide.html")
+
+from .__main__ import create_app
+
