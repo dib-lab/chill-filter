@@ -12,126 +12,54 @@ import markdown
 
 import pandas as pd
 
-import sourmash
-from sourmash import save_signatures_to_json
-from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
-
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__),
-                             "./chill-data")
-try:
-    os.mkdir(UPLOAD_FOLDER)
-except FileExistsError:
-    pass
-
-EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
-
+from . import jinja2_filters
 from .database_info import databases as sourmash_databases
 from .database_info import MOLTYPE, KSIZE, SCALED
+from .utils import *
 
-if 0:
-    start = time.time()
-    print(f'loading dbs:')
-    for db in sourmash_databases:
-        db.load()
-        print(f'...done! {time.time() - start:.1f}s')
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__),
+                             "../chill-data")
+EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
 
-app = Flask(__name__)
-jinja_env = app.jinja_env
+app = None
+def init():
+    global app
 
-def markdownify(md):
-    return markdown.markdown(md)
-jinja_env.filters['markdownify'] = markdownify
+    app = Flask(__name__)
 
-def percent(value):
-    return f"{value*100:.1f}%"
-jinja_env.filters['percent'] = percent
+    jinja2_filters.add_filters(app.jinja_env.filters)
 
-def format_bp(bp):
-    "Pretty-print bp information."
-    bp = float(bp)
-    if bp < 500:
-        return f"{bp:.0f} bp"
-    elif bp <= 500e3:
-        return f"{round(bp / 1e3, 1):.1f} kbp"
-    elif bp < 500e6:
-        return f"{round(bp / 1e6, 1):.1f} Mbp"
-    elif bp < 500e9:
-        return f"{round(bp / 1e9, 1):.1f} Gbp"
-    return f"??? {bp}"
-jinja_env.filters['format_bp'] = format_bp
-
-def unique_weighted_bp(item):
-    return format_bp(item['n_unique_weighted_found'] * item['scaled'])
-jinja_env.filters['unique_weighted_bp'] = unique_weighted_bp
-
-def unique_flat_bp(item):
-    return format_bp(item['unique_intersect_bp'])
-jinja_env.filters['unique_flat_bp'] = unique_flat_bp
-
-
-def load_sig(fullpath):
     try:
-        ss = sourmash.load_file_as_index(fullpath)
-        ss = ss.select(moltype=MOLTYPE, ksize=KSIZE, scaled=SCALED)
-        if len(ss) == 1:
-            ss = list(ss.signatures())[0]
-            return ss
-    except:
+        os.mkdir(UPLOAD_FOLDER)
+    except FileExistsError:
         pass
 
-    return None
+    if 0:
+        start = time.time()
+        print(f'loading dbs:')
+        for db in sourmash_databases:
+            db.load()
+            print(f'...done! {time.time() - start:.1f}s')
 
 
-def run_gather(outpath, csv_filename, db_info):
-    start = time.time()
-    status = branch.do_fastmultigather(
-        outpath,
-        db_info.filename,
-        0,
-        KSIZE,
-        SCALED,
-        MOLTYPE,
-        csv_filename,
-        False,
-        False,
-    )
-    end = time.time()
-
-    print(f"branchwater gather status: {status}; time: {end - start:.2f}s")
-    return status
+init()
 
 
-def sig_is_assembly(ss):
-    mh = ss.minhash
-    # track abundance set? => assembly
-    if not mh.track_abundance:
-        print('ZZZ1 - is assembly')
-        return True
+def create_app():
+    # Quick test configuration. Please use proper Flask configuration options
+    # in production settings, and use a separate file or environment variables
+    # to manage the secret key!
+    app.secret_key = "super secret key"
+    app.config["SESSION_TYPE"] = "filesystem"
 
-    # count the number > 1 in abundance
-    n_above_1 = sum(1 for (hv, ha) in mh.hashes.items() if ha > 1)
-    f_above_1 = n_above_1/len(mh)
-    print(f'n_above_1: {n_above_1}, of {len(mh)}, f={f_above_1:.3}')
+    # sess.init_app(app)
 
-    # more than 10% > 1? => probably not assembly
-    if f_above_1 > 0.1:
-        return False
+    app.debug = True
+    return app
 
-    # nope! assembly!
-    return True
-
-
-def estimate_weight_of_unknown(ss, db, *, CUTOFF=5):
-    mh = ss.minhash
-    merged_hashes = db.merged_hashes
-
-    unknown = [ (hv, ha) for (hv, ha) in mh.hashes.items() if ha not in merged_hashes ]
-    sum_unknown = sum( ha for (hv, ha) in unknown )
-    sum_high = sum( ha for (hv, ha) in unknown if ha >= CUTOFF )
-    sum_low = sum( ha for (hv, ha) in unknown if ha < CUTOFF )
-
-    return sum_high / sum_unknown, sum_low / sum_unknown
-
+###
+### actual Web site stuff
+###
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -329,15 +257,3 @@ def guide():
 @app.route("/favicon.ico")
 def favicon():
     return ""
-
-def create_app():
-    # Quick test configuration. Please use proper Flask configuration options
-    # in production settings, and use a separate file or environment variables
-    # to manage the secret key!
-    app.secret_key = "super secret key"
-    app.config["SESSION_TYPE"] = "filesystem"
-
-    # sess.init_app(app)
-
-    app.debug = True
-    return app
