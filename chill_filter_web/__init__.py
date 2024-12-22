@@ -8,6 +8,7 @@ import glob
 from flask import Flask, flash, request, redirect, url_for
 from flask import render_template, send_from_directory
 from werkzeug.utils import secure_filename
+import markdown
 
 import pandas as pd
 
@@ -36,6 +37,10 @@ if 0:
 
 app = Flask(__name__)
 jinja_env = app.jinja_env
+
+def markdownify(md):
+    return markdown.markdown(md)
+jinja_env.filters['markdownify'] = markdownify
 
 def percent(value):
     return f"{value*100:.1f}%"
@@ -315,11 +320,11 @@ def get_md5(path):
 
 @app.route("/faq")
 def faq():
-    return render_template("faq.html")
+    return render_template("faq.md")
 
 @app.route("/guide")
 def guide():
-    return render_template("guide.html")
+    return render_template("guide.md")
 
 @app.route("/favicon.ico")
 def favicon():
