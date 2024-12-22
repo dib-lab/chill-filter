@@ -121,12 +121,11 @@ def sketch():
 @app.route("/example", methods=["GET"])
 def example():
     "Retrieve an example"
-    print('XXX', app.config['EXAMPLES_DIR'])
     filename = request.args["filename"]
     filename = secure_filename(filename)
     frompath = os.path.join(app.config['EXAMPLES_DIR'], filename)
     if not os.path.exists(frompath):
-        return f"example file {filename} not found in examples directory {frompath}"
+        return f"example file {filename} not found in examples directory"
 
     ss = load_sig(frompath)
     if ss is None:
