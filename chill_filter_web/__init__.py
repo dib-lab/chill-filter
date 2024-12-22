@@ -123,9 +123,9 @@ def example():
     "Retrieve an example"
     filename = request.args["filename"]
     filename = secure_filename(filename)
-    frompath = os.path.join(EXAMPLES_DIR, filename)
+    frompath = os.path.join(app.config['EXAMPLES_DIR'], filename)
     if not os.path.exists(frompath):
-        return f"example file {filename} not found in examples/"
+        return f"example file {filename} not found in examples directory"
 
     ss = load_sig(frompath)
     if ss is None:
@@ -134,7 +134,7 @@ def example():
     md5 = ss.md5sum()[:8]
 
     # now build the filename & make sure it's in the upload dir.
-    topath = os.path.join(UPLOAD_FOLDER, filename)
+    topath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     if not os.path.exists(topath):
         print("copying")
         shutil.copy(frompath, topath)
@@ -148,7 +148,7 @@ def get_md5(path):
     print("PATH IS:", path, os.path.split(path))
     md5, filename, action = path.split("/")
 
-    outpath = os.path.join(UPLOAD_FOLDER, filename)
+    outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     success = False
     ss = None
     if os.path.exists(outpath):
@@ -156,12 +156,14 @@ def get_md5(path):
         if ss and ss.md5sum()[:8] == md5:
             success = True
 
+    print('SUCCESS:', success)
+
     if success:
         assert ss is not None
         sample_name = ss.name or "(unnamed sample)"
         if action == 'download_csv':
             csv_filename = filename + ".x.all.gather.csv" # @CTB
-            return send_from_directory(UPLOAD_FOLDER, csv_filename)
+            return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)
         elif action == "search":
             search_db = None
             for db in sourmash_databases:
@@ -229,8 +231,9 @@ def get_md5(path):
                     return "no matches found!"
 
         elif action == "download":
-            return send_from_directory(UPLOAD_FOLDER, filename)
+            return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
         elif action == "delete":
+            print('DELETE')
             file_list = glob.glob(f"{outpath}.*.csv")
             for filename in file_list + [outpath]:
                 try:

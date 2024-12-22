@@ -1,8 +1,11 @@
 import sourmash
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 
+from .database_info import MOLTYPE, KSIZE, SCALED
+
 
 def load_sig(fullpath):
+    fullpath = str(fullpath)
     try:
         ss = sourmash.load_file_as_index(fullpath)
         ss = ss.select(moltype=MOLTYPE, ksize=KSIZE, scaled=SCALED)
@@ -10,6 +13,7 @@ def load_sig(fullpath):
             ss = list(ss.signatures())[0]
             return ss
     except:
+        raise
         pass
 
     return None
