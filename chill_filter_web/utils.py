@@ -11,7 +11,8 @@ def load_sig(fullpath):
         ss = ss.select(moltype=MOLTYPE, ksize=KSIZE, scaled=SCALED)
         if len(ss) == 1:
             ss = list(ss.signatures())[0]
-            return ss
+            if len(ss.minhash):
+                return ss
     except:
         pass
 

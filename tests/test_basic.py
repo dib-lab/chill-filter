@@ -26,6 +26,18 @@ def test_upload_d_exists(app):
         assert os.path.exists(os.path.join(dirpath, 'Bu5.abund.k51.s100_000.sig.zip.x.all.gather.csv'))
 
 
+def test_fail_example(client):
+    response = client.get('/example?filename=XXX_Bu5.abund.k51.s100_000.sig.zip')
+    print(response.data)
+    assert response.status_code == 404
+
+
+def test_bad_example(client):
+    response = client.get('/example?filename=bad-example.sig.zip')
+    print(response.data)
+    assert response.status_code == 404
+
+
 def test_display_abund(client):
     response = client.get('/example?filename=Bu5.abund.k51.s100_000.sig.zip',
                           follow_redirects=True)
