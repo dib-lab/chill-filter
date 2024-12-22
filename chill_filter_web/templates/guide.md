@@ -19,13 +19,34 @@ You could use it to:
 * figure out what's in an unknown or problematic sample (e.g. [ERR2245457](/example?filename=ERR2245457.k51.s100_000.sig.zip));
 
 chill-filter will sensitively detect the presence of large genomes
-(500kb and up) at sequencing depths as low as 0.1x.
+(500kb and up) at sequencing depths as low as 0.1x. It searches your entire
+sample: it does not select a subset of the data set.
 
 The main value of chill-filter is that it is fast, sensitive, and
-comprehensive. If you want a full taxonomic breakdown of your sample,
+_comprehensive_. Within the limits of the available reference database,
+it should detect the presence of all microbial and eukaryotic genomes.
+
+**Caveats:** If you want a full taxonomic breakdown of your sample,
 there are other tools you might use,
-e.g. [sourmash](https://sourmash.readthedocs.io/), but they don't run in
-a Web browser :).
+e.g. [sourmash](https://sourmash.readthedocs.io/), but they don't run
+in a Web browser :). You can't currently look for viruses or other
+small genomes, but we would be happy to talk about how to do
+that. Chill-filter also does not work on amplicon data sets, and the
+numbers need to be treated with skepticism when analyzing enrichment
+data sets (ChIP-seq or ATAC-seq) or RNA data.
+
+**<font style="color:red">chill-filter is a research service and should not be relied upon for
+clinical diagnostics or confirmatory analyses.</font>**
+
+## What does chill-filter aim to do?
+
+chill-filter aims to be a sensitive, specific, and comprehensive
+approach to figuring out what is in your sample. It will always
+_underestimate_ the total known content in your sample.
+
+chill-filter will never share your sequence data (we don't actually have
+access to it, anyway!) However, please don't upload sensitive or personally
+identifying data.
 
 ## How do you use chill-filter?
 
@@ -78,7 +99,10 @@ You can also e-mail us at [chill@sourmash.bio](mailto:chill@sourmash.bio).
 ## Who is responsible for chill-filter?
 
 chill-filter is a product of
-[the sourmash project](https://github.com/sourmash-bio/).
+[the sourmash project](https://github.com/sourmash-bio/). It is
+currently unfunded, although the sourmash software stack it is built
+upon has been funded in part by the Moore Foundation, the NIH, the
+USDA, and the NSF.
 
       {% endfilter %}
 {% include "_footer.html" %}
