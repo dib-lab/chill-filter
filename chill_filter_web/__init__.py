@@ -12,126 +12,59 @@ import markdown
 
 import pandas as pd
 
-import sourmash
-from sourmash import save_signatures_to_json
-from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
-
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__),
-                             "./chill-data")
-try:
-    os.mkdir(UPLOAD_FOLDER)
-except FileExistsError:
-    pass
-
-EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
-
+from . import jinja2_filters
 from .database_info import databases as sourmash_databases
 from .database_info import MOLTYPE, KSIZE, SCALED
+from .utils import *
 
-if 0:
-    start = time.time()
-    print(f'loading dbs:')
-    for db in sourmash_databases:
-        db.load()
-        print(f'...done! {time.time() - start:.1f}s')
-
-app = Flask(__name__)
-jinja_env = app.jinja_env
-
-def markdownify(md):
-    return markdown.markdown(md)
-jinja_env.filters['markdownify'] = markdownify
-
-def percent(value):
-    return f"{value*100:.1f}%"
-jinja_env.filters['percent'] = percent
-
-def format_bp(bp):
-    "Pretty-print bp information."
-    bp = float(bp)
-    if bp < 500:
-        return f"{bp:.0f} bp"
-    elif bp <= 500e3:
-        return f"{round(bp / 1e3, 1):.1f} kbp"
-    elif bp < 500e6:
-        return f"{round(bp / 1e6, 1):.1f} Mbp"
-    elif bp < 500e9:
-        return f"{round(bp / 1e9, 1):.1f} Gbp"
-    return f"??? {bp}"
-jinja_env.filters['format_bp'] = format_bp
-
-def unique_weighted_bp(item):
-    return format_bp(item['n_unique_weighted_found'] * item['scaled'])
-jinja_env.filters['unique_weighted_bp'] = unique_weighted_bp
-
-def unique_flat_bp(item):
-    return format_bp(item['unique_intersect_bp'])
-jinja_env.filters['unique_flat_bp'] = unique_flat_bp
+default_settings = dict(
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../chill-data'),
+    EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "examples/")
+)
 
 
-def load_sig(fullpath):
+app = None
+def init():
+    global app
+
+    app = Flask(__name__)
+    app.config.update(default_settings)
+    if 'CHILL_FILTER_SETTINGS' in os.environ:
+        app.config.from_envvar('CHILL_FILTER_SETTINGS')
+
+    jinja2_filters.add_filters(app.jinja_env.filters)
+
     try:
-        ss = sourmash.load_file_as_index(fullpath)
-        ss = ss.select(moltype=MOLTYPE, ksize=KSIZE, scaled=SCALED)
-        if len(ss) == 1:
-            ss = list(ss.signatures())[0]
-            return ss
-    except:
+        os.mkdir(app.config['UPLOAD_FOLDER'])
+    except FileExistsError:
         pass
 
-    return None
+    if 0:
+        start = time.time()
+        print(f'loading dbs:')
+        for db in sourmash_databases:
+            db.load()
+            print(f'...done! {time.time() - start:.1f}s')
 
 
-def run_gather(outpath, csv_filename, db_info):
-    start = time.time()
-    status = branch.do_fastmultigather(
-        outpath,
-        db_info.filename,
-        0,
-        KSIZE,
-        SCALED,
-        MOLTYPE,
-        csv_filename,
-        False,
-        False,
-    )
-    end = time.time()
-
-    print(f"branchwater gather status: {status}; time: {end - start:.2f}s")
-    return status
+init()
 
 
-def sig_is_assembly(ss):
-    mh = ss.minhash
-    # track abundance set? => assembly
-    if not mh.track_abundance:
-        print('ZZZ1 - is assembly')
-        return True
+def create_app():
+    # Quick test configuration. Please use proper Flask configuration options
+    # in production settings, and use a separate file or environment variables
+    # to manage the secret key!
+    app.secret_key = "super secret key"
+    app.config["SESSION_TYPE"] = "filesystem"
 
-    # count the number > 1 in abundance
-    n_above_1 = sum(1 for (hv, ha) in mh.hashes.items() if ha > 1)
-    f_above_1 = n_above_1/len(mh)
-    print(f'n_above_1: {n_above_1}, of {len(mh)}, f={f_above_1:.3}')
+    # sess.init_app(app)
 
-    # more than 10% > 1? => probably not assembly
-    if f_above_1 > 0.1:
-        return False
+    app.debug = True
+    return app
 
-    # nope! assembly!
-    return True
-
-
-def estimate_weight_of_unknown(ss, db, *, CUTOFF=5):
-    mh = ss.minhash
-    merged_hashes = db.merged_hashes
-
-    unknown = [ (hv, ha) for (hv, ha) in mh.hashes.items() if ha not in merged_hashes ]
-    sum_unknown = sum( ha for (hv, ha) in unknown )
-    sum_high = sum( ha for (hv, ha) in unknown if ha >= CUTOFF )
-    sum_low = sum( ha for (hv, ha) in unknown if ha < CUTOFF )
-
-    return sum_high / sum_unknown, sum_low / sum_unknown
-
+###
+### actual Web site stuff
+###
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -150,7 +83,7 @@ def index():
 
         if file:
             filename = secure_filename(file.filename)
-            outpath = os.path.join(UPLOAD_FOLDER, filename)
+            outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(outpath)
 
             ss = load_sig(outpath)
@@ -169,8 +102,9 @@ def sketch():
         if "signature" not in request.form:
             flash("No file part")
             return redirect(request.url)
-        sig_json = request.form["signature"]
 
+        # take uploaded file and save
+        sig_json = request.form["signature"]
         success = False
         filename = f"t{int(time.time())}.sig.gz"
         outpath = os.path.join(UPLOAD_FOLDER, filename)
@@ -179,9 +113,11 @@ def sketch():
 
         ss = load_sig(outpath)
         if ss:
+            # success? build URL & redirect
             md5 = ss.md5sum()[:8]
             return redirect(f"/{md5}/{filename}/search")
 
+    # default: redirect to /
     return redirect(url_for("index"))
 
 
@@ -190,20 +126,23 @@ def example():
     "Retrieve an example"
     filename = request.args["filename"]
     filename = secure_filename(filename)
-    frompath = os.path.join(EXAMPLES_DIR, filename)
+    frompath = os.path.join(app.config['EXAMPLES_DIR'], filename)
     if not os.path.exists(frompath):
-        return f"example file {filename} not found in examples/"
+        return render_template("error.html",
+                               error_message=f"example file <tt>{filename}</tt> not found in examples"), 404
 
     ss = load_sig(frompath)
     if ss is None:
-        return f"bad example."
+        # doesn't match moltype etc, or other problems.
+        return render_template("error.html",
+                               error_message="Internal error: bad example file!?"), 404
 
     md5 = ss.md5sum()[:8]
 
     # now build the filename & make sure it's in the upload dir.
-    topath = os.path.join(UPLOAD_FOLDER, filename)
+    topath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     if not os.path.exists(topath):
-        print("copying")
+        print(f"copying: {frompath} {topath}")
         shutil.copy(frompath, topath)
 
     return redirect(f"/{md5}/{filename}/search")
@@ -211,112 +150,126 @@ def example():
 
 @app.route("/")
 @app.route("/<path:path>")
-def get_md5(path):
+def get_by_md5(path):
     print("PATH IS:", path, os.path.split(path))
-    md5, filename, action = path.split("/")
+    path = path.split("/")
+    if len(path) != 3:
+        return redirect(url_for("index"))
 
-    outpath = os.path.join(UPLOAD_FOLDER, filename)
+    md5, filename, action = path
+
+    # now try loading the sketch
+    sigpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     success = False
     ss = None
-    if os.path.exists(outpath):
-        ss = load_sig(outpath)
+    if os.path.exists(sigpath):
+        ss = load_sig(sigpath)
         if ss and ss.md5sum()[:8] == md5:
             success = True
 
-    if success:
-        assert ss is not None
-        sample_name = ss.name or "(unnamed sample)"
-        if action == 'download_csv':
-            csv_filename = filename + ".x.all.gather.csv" # @CTB
-            return send_from_directory(UPLOAD_FOLDER, csv_filename)
-        elif action == "search":
-            search_db = None
-            for db in sourmash_databases:
-                if db.default:
-                    search_db = db
-                    break
+    print('SUCCESS VALUE:', success)
+    if not success:
+        return redirect(url_for("index"))
 
-            if search_db is None:
-                raise Exception("no default search DB?!")
+    assert ss is not None
+    sample_name = ss.name or "(unnamed sample)"
 
-            csv_filename = f"{outpath}.x.{search_db.shortname}.gather.csv"
-            if not os.path.exists(csv_filename):
-                status = run_gather(outpath, csv_filename, search_db)
-                if status != 0:
-                    return "search failed, for reasons that are probably not your fault"
-                else:
-                    print(f'output is in: "{csv_filename}"')
+    # actions!
+    if action == 'download_csv':
+        csv_filename = filename + ".x.all.gather.csv" # @CTB
+        return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)
+    elif action == "download":
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    elif action == "delete":
+        file_list = glob.glob(f"{sigpath}.*.csv")
+        for filename in file_list + [sigpath]:
+            try:
+                print('removing:', (filename,))
+                os.unlink(filename)
+            except:
+                pass
+        return redirect(url_for("index"))
+    elif action == "search":
+        search_db = None
+        for db in sourmash_databases:
+            if db.default:
+                search_db = db
+                break
+
+        if search_db is None:
+            raise Exception("no default search DB?!")
+
+        csv_filename = f"{sigpath}.x.{search_db.shortname}.gather.csv"
+        if not os.path.exists(csv_filename):
+            status = run_gather(sigpath, csv_filename, search_db)
+            if status != 0:
+                return "search failed, for reasons that are probably not your fault"
             else:
-                print(f"using cached output in: '{csv_filename}'")
+                print(f'output is in: "{csv_filename}"')
+        else:
+            print(f"using cached output in: '{csv_filename}'")
 
+        # read!
+        try:
             gather_df = pd.read_csv(csv_filename)
             gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+        except:
+            gather_df = []
 
-            gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
+        # no (significant) results?? exit.
+        if not len(gather_df):
+            return render_template(
+                "sample_search_no_matches.html",
+                sample_name=sample_name)
 
-            # process abundance-weighted matches
-            if not sig_is_assembly(ss):
-                #f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss,
-                #         search_db)
-                f_unknown_high, f_unknown_low = 0, 0
+        # ok, now prep for display.
 
-                if len(gather_df):
-                    last_row = gather_df.tail(1).squeeze()
-                    sum_weighted_found = last_row["sum_weighted_found"]
-                    total_weighted_hashes = last_row["total_weighted_hashes"]
+        gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
 
-                    f_found = sum_weighted_found / total_weighted_hashes
+        # process abundance-weighted matches
+        if not sig_is_assembly(ss):
+            #f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss,
+            #         search_db)
+            f_unknown_high, f_unknown_low = 0, 0
 
-                    return render_template(
-                        "sample_search_abund.html",
-                        sample_name=sample_name,
-                        sig=ss,
-                        gather_df=gather_df,
-                        f_found=f_found,
-                        f_unknown_high=f_unknown_high,
-                        f_unknown_low=f_unknown_low,
-                    )
-                else:
-                    return "no matches found!"
-            # process flat matching (assembly)
-            else:
-                print('running flat')
-                if len(gather_df):
-                    last_row = gather_df.tail(1).squeeze()
-                    f_found = gather_df['f_unique_to_query'].sum()
+            last_row = gather_df.tail(1).squeeze()
+            sum_weighted_found = last_row["sum_weighted_found"]
+            total_weighted_hashes = last_row["total_weighted_hashes"]
 
-                    return render_template(
-                        "sample_search_flat.html",
-                        sample_name=sample_name,
-                        sig=ss,
-                        gather_df=gather_df,
-                        f_found=f_found,
-                    )
-                else:
-                    return "no matches found!"
+            f_found = sum_weighted_found / total_weighted_hashes
 
-        elif action == "download":
-            return send_from_directory(UPLOAD_FOLDER, filename)
-        elif action == "delete":
-            file_list = glob.glob(f"{outpath}.*.csv")
-            for filename in file_list + [outpath]:
-                try:
-                    os.unlink(filename)
-                except:
-                    pass
-            return redirect(url_for("index"))
+            return render_template(
+                "sample_search_abund.html",
+                sample_name=sample_name,
+                sig=ss,
+                gather_df=gather_df,
+                f_found=f_found,
+                f_unknown_high=f_unknown_high,
+                f_unknown_low=f_unknown_low,
+            )
+        # process flat matching (assembly)
+        else:
+            print('running flat')
+            last_row = gather_df.tail(1).squeeze()
+            f_found = gather_df['f_unique_to_query'].sum()
 
-        # default
-        sum_weighted_hashes = sum(ss.minhash.hashes.values())
-        return render_template(
-            "sample_index.html",
-            sig=ss,
-            sig_filename=filename,
-            sample_name=sample_name,
-            sum_weighted_hashes=sum_weighted_hashes,
-        )
-    else:
-        return redirect(url_for("index"))
+            return render_template(
+                "sample_search_flat.html",
+                sample_name=sample_name,
+                sig=ss,
+                gather_df=gather_df,
+                f_found=f_found,
+            )
+
+    # default: sample index
+    sum_weighted_hashes = sum(ss.minhash.hashes.values())
+    return render_template(
+        "sample_index.html",
+        sig=ss,
+        sig_filename=filename,
+        sample_name=sample_name,
+        sum_weighted_hashes=sum_weighted_hashes,
+    )
 
 @app.route("/faq")
 def faq():
@@ -329,15 +282,3 @@ def guide():
 @app.route("/favicon.ico")
 def favicon():
     return ""
-
-def create_app():
-    # Quick test configuration. Please use proper Flask configuration options
-    # in production settings, and use a separate file or environment variables
-    # to manage the secret key!
-    app.secret_key = "super secret key"
-    app.config["SESSION_TYPE"] = "filesystem"
-
-    # sess.init_app(app)
-
-    app.debug = True
-    return app
