@@ -13,7 +13,6 @@ def load_sig(fullpath):
             ss = list(ss.signatures())[0]
             return ss
     except:
-        raise
         pass
 
     return None
