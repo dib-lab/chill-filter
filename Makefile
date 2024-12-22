@@ -5,3 +5,6 @@ dist:
 
 black:
 	python -m black chill_filter_web
+
+test:
+	pytest
