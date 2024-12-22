@@ -1,14 +1,24 @@
+import os
+import shutil
+
 import pytest
+
 from chill_filter_web import create_app
 
-
 # from: https://flask.palletsprojects.com/en/stable/testing/
+TESTDATA_UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__),
+                                      'test-upload.d')
 
 @pytest.fixture()
-def app():
+def app(tmp_path):
     app = create_app()
+
+    upload_folder = tmp_path / 'upload'
+    shutil.copytree(TESTDATA_UPLOAD_FOLDER, upload_folder)
+    
     app.config.update({
         "TESTING": True,
+        "UPLOAD_FOLDER": str(upload_folder),
     })
 
     # other setup can go here

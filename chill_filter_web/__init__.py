@@ -17,20 +17,25 @@ from .database_info import databases as sourmash_databases
 from .database_info import MOLTYPE, KSIZE, SCALED
 from .utils import *
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__),
-                             "../chill-data")
-EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
+default_settings = dict(
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../chill-data'),
+    EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
+)
+
 
 app = None
 def init():
     global app
 
     app = Flask(__name__)
+    app.config.update(default_settings)
+    if 'CHILL_FILTER_SETTINGS' in os.environ:
+        app.config.from_envvar('CHILL_FILTER_SETTINGS')
 
     jinja2_filters.add_filters(app.jinja_env.filters)
 
     try:
-        os.mkdir(UPLOAD_FOLDER)
+        os.mkdir(app.config['UPLOAD_FOLDER'])
     except FileExistsError:
         pass
 
@@ -78,7 +83,7 @@ def index():
 
         if file:
             filename = secure_filename(file.filename)
-            outpath = os.path.join(UPLOAD_FOLDER, filename)
+            outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(outpath)
 
             ss = load_sig(outpath)
