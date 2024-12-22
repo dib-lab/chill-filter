@@ -19,7 +19,7 @@ from .utils import *
 
 default_settings = dict(
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../chill-data'),
-    EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "../examples/")
+    EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "examples/")
 )
 
 
@@ -121,11 +121,12 @@ def sketch():
 @app.route("/example", methods=["GET"])
 def example():
     "Retrieve an example"
+    print('XXX', app.config['EXAMPLES_DIR'])
     filename = request.args["filename"]
     filename = secure_filename(filename)
     frompath = os.path.join(app.config['EXAMPLES_DIR'], filename)
     if not os.path.exists(frompath):
-        return f"example file {filename} not found in examples directory"
+        return f"example file {filename} not found in examples directory {frompath}"
 
     ss = load_sig(frompath)
     if ss is None:
