@@ -1,5 +1,6 @@
 prune .github
 
+include examples/*
 include chill_filter_web/templates/*
 include chill_filter_web/static/*
 include chill_filter_web/static/mgnify-component/*
