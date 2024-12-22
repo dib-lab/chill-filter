@@ -1,3 +1,5 @@
+import time
+
 import sourmash
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 

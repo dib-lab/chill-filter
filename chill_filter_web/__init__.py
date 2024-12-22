@@ -191,6 +191,7 @@ def get_md5(path):
         else:
             print(f"using cached output in: '{csv_filename}'")
 
+        # pandas.errors.EmptyDataError
         gather_df = pd.read_csv(csv_filename)
         gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
 
