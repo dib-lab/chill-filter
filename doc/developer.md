@@ -8,3 +8,8 @@ and the JavaScript is placed entirely in
 ## CSS
 
 We are using [pico](https://picocss.com/docs).
+
+## User guide and FAQ
+
+These are stored in Markdown in the [`chill_filter_web/templates/` directory](https://github.com/dib-lab/chill-filter/tree/main/chill_filter_web/templates).
+

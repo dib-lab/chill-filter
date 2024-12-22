@@ -10,3 +10,5 @@ dependencies:
  - sourmash_plugin_branchwater
  - pandas
  - gunicorn
+ - markdown
+ - pytest
