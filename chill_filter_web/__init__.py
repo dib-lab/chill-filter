@@ -150,15 +150,20 @@ def example():
 
 @app.route("/")
 @app.route("/<path:path>")
-def get_md5(path):
+def get_by_md5(path):
     print("PATH IS:", path, os.path.split(path))
-    md5, filename, action = path.split("/")
+    path = path.split("/")
+    if len(path) != 3:
+        return redirect(url_for("index"))
 
-    outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    md5, filename, action = path
+
+    # now try loading the sketch
+    sigpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     success = False
     ss = None
-    if os.path.exists(outpath):
-        ss = load_sig(outpath)
+    if os.path.exists(sigpath):
+        ss = load_sig(sigpath)
         if ss and ss.md5sum()[:8] == md5:
             success = True
 
@@ -168,9 +173,22 @@ def get_md5(path):
 
     assert ss is not None
     sample_name = ss.name or "(unnamed sample)"
+
+    # actions!
     if action == 'download_csv':
         csv_filename = filename + ".x.all.gather.csv" # @CTB
         return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)
+    elif action == "download":
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    elif action == "delete":
+        file_list = glob.glob(f"{sigpath}.*.csv")
+        for filename in file_list + [sigpath]:
+            try:
+                print('removing:', (filename,))
+                os.unlink(filename)
+            except:
+                pass
+        return redirect(url_for("index"))
     elif action == "search":
         search_db = None
         for db in sourmash_databases:
@@ -181,9 +199,9 @@ def get_md5(path):
         if search_db is None:
             raise Exception("no default search DB?!")
 
-        csv_filename = f"{outpath}.x.{search_db.shortname}.gather.csv"
+        csv_filename = f"{sigpath}.x.{search_db.shortname}.gather.csv"
         if not os.path.exists(csv_filename):
-            status = run_gather(outpath, csv_filename, search_db)
+            status = run_gather(sigpath, csv_filename, search_db)
             if status != 0:
                 return "search failed, for reasons that are probably not your fault"
             else:
@@ -191,9 +209,20 @@ def get_md5(path):
         else:
             print(f"using cached output in: '{csv_filename}'")
 
-        # pandas.errors.EmptyDataError
-        gather_df = pd.read_csv(csv_filename)
-        gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+        # read!
+        try:
+            gather_df = pd.read_csv(csv_filename)
+            gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+        except:
+            gather_df = []
+
+        # no (significant) results?? exit.
+        if not len(gather_df):
+            return render_template(
+                "sample_search_no_matches.html",
+                sample_name=sample_name)
+
+        # ok, now prep for display.
 
         gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
 
@@ -203,52 +232,34 @@ def get_md5(path):
             #         search_db)
             f_unknown_high, f_unknown_low = 0, 0
 
-            if len(gather_df):
-                last_row = gather_df.tail(1).squeeze()
-                sum_weighted_found = last_row["sum_weighted_found"]
-                total_weighted_hashes = last_row["total_weighted_hashes"]
+            last_row = gather_df.tail(1).squeeze()
+            sum_weighted_found = last_row["sum_weighted_found"]
+            total_weighted_hashes = last_row["total_weighted_hashes"]
 
-                f_found = sum_weighted_found / total_weighted_hashes
+            f_found = sum_weighted_found / total_weighted_hashes
 
-                return render_template(
-                    "sample_search_abund.html",
-                    sample_name=sample_name,
-                    sig=ss,
-                    gather_df=gather_df,
-                    f_found=f_found,
-                    f_unknown_high=f_unknown_high,
-                    f_unknown_low=f_unknown_low,
-                )
-            else:
-                return "no matches found!" # @CTB
+            return render_template(
+                "sample_search_abund.html",
+                sample_name=sample_name,
+                sig=ss,
+                gather_df=gather_df,
+                f_found=f_found,
+                f_unknown_high=f_unknown_high,
+                f_unknown_low=f_unknown_low,
+            )
         # process flat matching (assembly)
         else:
             print('running flat')
-            if len(gather_df):
-                last_row = gather_df.tail(1).squeeze()
-                f_found = gather_df['f_unique_to_query'].sum()
+            last_row = gather_df.tail(1).squeeze()
+            f_found = gather_df['f_unique_to_query'].sum()
 
-                return render_template(
-                    "sample_search_flat.html",
-                    sample_name=sample_name,
-                    sig=ss,
-                    gather_df=gather_df,
-                    f_found=f_found,
-                )
-            else:
-                return "no matches found!" # @CTB
-
-    elif action == "download":
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    elif action == "delete":
-        file_list = glob.glob(f"{outpath}.*.csv")
-        for filename in file_list + [outpath]:
-            try:
-                print('removing:', (filename,))
-                os.unlink(filename)
-            except:
-                pass
-        return redirect(url_for("index"))
+            return render_template(
+                "sample_search_flat.html",
+                sample_name=sample_name,
+                sig=ss,
+                gather_df=gather_df,
+                f_found=f_found,
+            )
 
     # default: sample index
     sum_weighted_hashes = sum(ss.minhash.hashes.values())

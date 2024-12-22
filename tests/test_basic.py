@@ -63,6 +63,13 @@ def test_display_flat(client):
     assert b'7.1% (176.1 Mbp)' in response.data
 
 
+def test_display_no_matches(client):
+    response = client.get('/ac5b62eb/no-matches.sig.zip/search',
+                          follow_redirects=True)
+    print(response.data)
+    assert b'no matches to your sample' in response.data
+
+
 def test_delete(app):
     # this is really a test for the test fixtures ;)
     with app.app_context():
@@ -111,3 +118,5 @@ def test_sample_download_csv(client):
     data = response.get_data()
     print(data)
     assert data.startswith(b'intersect_bp,f_orig_query,f_match,')
+
+
