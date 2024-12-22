@@ -10,7 +10,7 @@ on:
     branches: [latest]
 jobs:
   mamba:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
       with:
@@ -30,7 +30,7 @@ jobs:
       with:
         auto-update-conda: true
         python-version: 3.12
-        channels: conda-forge,bioconda
+        channels: conda-forge
         miniforge-version: latest
         use-mamba: true
         mamba-version: "*"
