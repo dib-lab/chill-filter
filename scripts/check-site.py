@@ -32,6 +32,8 @@ def main():
     assert r.status_code == 200
     assert '95.0% (5.1 Gbp)' in r.text
 
+    print('success!!')
+
 
 if __name__ == '__main__':
     sys.exit(main())
