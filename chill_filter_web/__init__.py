@@ -107,7 +107,7 @@ def sketch():
         sig_json = request.form["signature"]
         success = False
         filename = f"t{int(time.time())}.sig.gz"
-        outpath = os.path.join(UPLOAD_FOLDER, filename)
+        outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         with gzip.open(outpath, "wt") as fp:
             fp.write(f"[{sig_json}]")
 
