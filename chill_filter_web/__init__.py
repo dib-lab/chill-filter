@@ -13,7 +13,7 @@ import markdown
 import pandas as pd
 
 from . import jinja2_filters
-from .database_info import databases as sourmash_databases
+from .database_info import get_search_db
 from .database_info import MOLTYPE, KSIZE, SCALED
 from .utils import *
 
@@ -184,7 +184,8 @@ def get_by_md5(path):
 
     # actions!
     if action == 'download_csv':
-        csv_filename = filename + ".x.all.gather.csv" # @CTB
+        search_db = get_search_db()
+        csv_filename = filename + f".x.{search_db.shortname}.gather.csv"
         return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)
     elif action == "download":
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -198,14 +199,7 @@ def get_by_md5(path):
                 pass
         return redirect(url_for("index"))
     elif action == "search":
-        search_db = None
-        for db in sourmash_databases:
-            if db.default:
-                search_db = db
-                break
-
-        if search_db is None:
-            raise Exception("no default search DB?!")
+        search_db = get_search_db()
 
         csv_filename = f"{sigpath}.x.{search_db.shortname}.gather.csv"
         if not os.path.exists(csv_filename):
@@ -228,6 +222,7 @@ def get_by_md5(path):
         if not len(gather_df):
             return render_template(
                 "sample_search_no_matches.html",
+                search_db=search_db,
                 sample_name=sample_name)
 
         # ok, now prep for display.
@@ -254,6 +249,7 @@ def get_by_md5(path):
                 f_found=f_found,
                 f_unknown_high=f_unknown_high,
                 f_unknown_low=f_unknown_low,
+                search_db=search_db,
             )
         # process flat matching (assembly)
         else:
@@ -267,6 +263,7 @@ def get_by_md5(path):
                 sig=ss,
                 gather_df=gather_df,
                 f_found=f_found,
+                search_db=search_db,
             )
 
     # default: sample index

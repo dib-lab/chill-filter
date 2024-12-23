@@ -31,7 +31,7 @@ class DatabaseDescription:
     def get_display_name(self, x):
         return self.sketch_to_display_names.get(x, x)
 
-databases = [
+_databases = [
     DatabaseDescription('all',
                         'prepare-db/plants+animals+gtdb.rocksdb',
                         'prepare-db/plants+animals+gtdb.merged.sig.zip',
@@ -46,4 +46,21 @@ databases = [
                          'susScr11': 'pig genome (suScr11)',
                          'genbank-plants': 'all plants (GenBank 12/2024)',
                          }, {}, default=True),
+    DatabaseDescription('gtdb-only',
+                        'prepare-db/gtdb.rocksdb',
+                        'prepare-db/gtdb.merged.sig.zip',
+                        {}, {}),
     ]
+
+
+def get_search_db(name=None):
+    if name:
+        for db in _databases:
+            if db.shortname == name:
+                return db
+        raise Exception(f"cannot match to search db '{name}'")
+    else:
+        for db in _databases:
+            if db.default:
+                return db
+        raise Exception("no default search DB!?")
