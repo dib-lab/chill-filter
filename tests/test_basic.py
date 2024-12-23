@@ -118,5 +118,3 @@ def test_sample_download_csv(client):
     data = response.get_data()
     print(data)
     assert data.startswith(b'intersect_bp,f_orig_query,f_match,')
-
-

@@ -19,7 +19,8 @@ from .utils import *
 
 default_settings = dict(
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../chill-data'),
-    EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "examples/")
+    EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "examples/"),
+    MAX_CONTENT_LENGTH = 10*1000*1000,
 )
 
 
@@ -66,6 +67,8 @@ def create_app():
 ### actual Web site stuff
 ###
 
+
+# handles default index, plus upload of precalculated sketch.
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -95,12 +98,15 @@ def index():
     return render_template("index.html")
 
 
+# handles client-side sketch w/JSON sig
 @app.route("/sketch", methods=["GET", "POST"])
 def sketch():
+    print('XXX sketch')
     if request.method == "POST":
         # check if the post request has the file part
         if "signature" not in request.form:
-            flash("No file part")
+            flash("No file part") # @CTB
+            print('fail')
             return redirect(request.url)
 
         # take uploaded file and save
@@ -112,10 +118,13 @@ def sketch():
             fp.write(f"[{sig_json}]")
 
         ss = load_sig(outpath)
+        print('zzz', ss)
         if ss:
             # success? build URL & redirect
             md5 = ss.md5sum()[:8]
             return redirect(f"/{md5}/{filename}/search")
+
+    print('fallthru')
 
     # default: redirect to /
     return redirect(url_for("index"))
