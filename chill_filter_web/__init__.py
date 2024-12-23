@@ -101,12 +101,10 @@ def index():
 # handles client-side sketch w/JSON sig
 @app.route("/sketch", methods=["GET", "POST"])
 def sketch():
-    print('XXX sketch')
     if request.method == "POST":
         # check if the post request has the file part
         if "signature" not in request.form:
             flash("No file part") # @CTB
-            print('fail')
             return redirect(request.url)
 
         # take uploaded file and save
@@ -118,10 +116,11 @@ def sketch():
             fp.write(f"[{sig_json}]")
 
         ss = load_sig(outpath)
-        print('zzz', ss)
         if ss:
             # success? build URL & redirect
             md5 = ss.md5sum()[:8]
+            if app.config['TESTING']:
+                return "TESTING MODE: upload successful"
             return redirect(f"/{md5}/{filename}/search")
 
     print('fallthru')

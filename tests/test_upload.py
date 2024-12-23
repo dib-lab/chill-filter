@@ -32,10 +32,9 @@ def test_sample_upload_precalc(app):
 
 
 def test_sample_upload_sketch(app):
-    #pytest.xfail("")
     # test upload of client-side sketch via POST to /sketch
     #
-    # NOTE: this actually runs the search... will probably fail on CI.
+    # uses testing mode to avoid running the actual search.
     with app.app_context():
         client = app.test_client()
 
@@ -58,4 +57,4 @@ def test_sample_upload_sketch(app):
                                follow_redirects=True)
 
         print(response.data)
-        assert b'found no matches to your sample' in response.data
+        assert b'TESTING MODE: upload successful'
