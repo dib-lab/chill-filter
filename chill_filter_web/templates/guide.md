@@ -8,6 +8,8 @@
       {% filter markdownify %}
 # The chill-filter user guide
 
+[Home page](/) | [Frequently Asked questions](/faq)
+
 chill-filter is a rapid sample-screening Web application that comprehensively
 determines the composition of a shotgun sequence data set. It should take
 about 10 seconds to process an uploaded sample.
@@ -20,7 +22,7 @@ You could use it to:
 
 chill-filter will sensitively detect the presence of large genomes
 (500kb and up) at sequencing depths as low as 0.1x. It searches your entire
-sample: it does not select a subset of the data set.
+sample: it does not select a subset of your data.
 
 The main value of chill-filter is that it is fast, sensitive, and
 _comprehensive_. Within the limits of the available reference database,
@@ -38,7 +40,7 @@ data sets (ChIP-seq or ATAC-seq) or RNA data.
 **<font style="color:red">chill-filter is a research service and should not be relied upon for
 clinical diagnostics or confirmatory analyses.</font>**
 
-## What does chill-filter aim to do?
+## What are chill-filter's goals?
 
 chill-filter aims to be a sensitive, specific, and comprehensive
 approach to figuring out what is in your sample. It will always
