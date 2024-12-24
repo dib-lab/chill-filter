@@ -67,6 +67,8 @@ def create_app():
 ### actual Web site stuff
 ###
 
+# @CTB can we put this in a different module?
+
 
 # handles default index
 @app.route("/")
@@ -129,8 +131,6 @@ def sketch():
                 return "TESTING MODE: upload successful"
             return redirect(f"/{md5}/{filename}/search")
 
-    print('fallthru')
-
     # default: redirect to /
     return redirect(url_for("index"))
 
@@ -142,21 +142,23 @@ def example():
     filename = secure_filename(filename)
     frompath = os.path.join(app.config['EXAMPLES_DIR'], filename)
     if not os.path.exists(frompath):
-        return render_template("error.html",
-                               error_message=f"example file <tt>{filename}</tt> not found in examples"), 404
+        msg = f"example file <tt>{filename}</tt> not found in examples"
+        return render_template("error.html", error_message=msg), \
+            404
 
     ss = load_sig(frompath)
     if ss is None:
         # doesn't match moltype etc, or other problems.
-        return render_template("error.html",
-                               error_message="Internal error: bad example file!?"), 404
+        msg = "Internal error: bad example file!?"
+        return render_template("error.html", error_message=msg), \
+            404
 
     md5 = ss.md5sum()[:8]
 
     # now build the filename & make sure it's in the upload dir.
     topath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     if not os.path.exists(topath):
-        print(f"copying: {frompath} {topath}")
+        print(f"copying example file: {frompath} {topath}")
         shutil.copy(frompath, topath)
 
     return redirect(f"/{md5}/{filename}/search")
