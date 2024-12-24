@@ -222,10 +222,6 @@ def sig_download_csv(md5, filename):
     if websig is None:
         return redirect(url_for("index"))
 
-    ss = websig.ss
-    sample_name = websig.sample_name
-    sigpath = websig.prefix
-
     search_db = get_search_db()
     csv_filename = filename + f".x.{search_db.shortname}.gather.csv"
     return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)
@@ -405,3 +401,14 @@ def sig_subsearch(md5, filename, dbname):
             f_found=f_found,
             search_db=search_db,
         )
+
+
+# subsearch - download CSV
+@app.route("/<string:md5>/<string:filename>/subsearch/<string:dbname>/download_csv")
+def sig_subsearch_download_csv(md5, filename, dbname):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
+        return redirect(url_for("index"))
+
+    csv_filename = f"{filename}.x.{dbname}.gather.csv"
+    return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)

@@ -31,3 +31,14 @@ def test_display_no_matches(client):
                           follow_redirects=True)
     print(response.data)
     assert b'no matches to your sample' in response.data
+
+
+def test_download_csv(client):
+    # test download of CSV
+    response = client.get('/example?filename=Bu5.abund.k51.s100_000.sig.zip',
+                          follow_redirects=True)
+    response = client.get('97681062/Bu5.abund.k51.s100_000.sig.zip/subsearch/all/download_csv')
+    assert response.status_code == 200
+    data = response.get_data()
+    print(data)
+    assert data.startswith(b'intersect_bp,f_orig_query,f_match,')

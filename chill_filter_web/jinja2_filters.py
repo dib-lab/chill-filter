@@ -30,7 +30,7 @@ def unique_flat_bp(item):
 def subsearch_link(item, search_db):
     nextlevel_name = search_db.get_nextlevel_db(item['match_name'])
     descr = item['match_description']
-    #print(f"subsearch_link: for {item['match_name']} found {nextlevel_name}")
+    print(f"subsearch_link: for {item['match_name']} found {nextlevel_name}")
     if nextlevel_name:
         return Markup(f"<a href='./subsearch/{nextlevel_name}/'>{descr}</a>")
     else:

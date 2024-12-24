@@ -17,6 +17,7 @@ rule all:
         'podar-ref.rocksdb',
         'gtdb-rs220-phylum.mf.csv',
         'gtdb-rs220-phylum.rocksdb',
+        'genbank-plants-2024.07.rocksdb',
 
 rule index_manifest:
     input:
@@ -91,6 +92,15 @@ rule gtdb_merged_phylum:
         "downloads/gtdb-rs220-phylum.sig.zip",
     output:
         "gtdb-rs220-phylum.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+rule plants_individual_mf:
+    input:
+        "downloads/genbank-plants-2024.07.k51.s100_000.sig.zip",
+    output:
+        "genbank-plants-2024.07.mf.csv",
     shell: """
         sourmash sig collect -F csv {input} -o {output} --abspath
     """

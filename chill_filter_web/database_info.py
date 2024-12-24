@@ -54,10 +54,11 @@ _databases = [
                          'mm39': 'mouse genome (mm39)',
                          'oviAri4': 'sheep genome (oviAri4)',
                          'susScr11': 'pig genome (suScr11)',
-                         'genbank-plants': 'all plants (GenBank 12/2024)',
+                         'genbank-plants': 'all plants (GenBank July 2024)',
                          },
                         {
                             'bacteria and archaea (GTDB rs220)': 'gtdb-rs220-phylum',
+                            'genbank-plants': 'genbank-plants-2024.07',
                         }, default=True),
     DatabaseDescription('gtdb-only',
                         'prepare-db/gtdb.rocksdb',
@@ -71,8 +72,13 @@ _databases = [
                         {}, {}),
     DatabaseDescription('gtdb-rs220-phylum',
                         'prepare-db/gtdb-rs220-phylum.rocksdb',
-                        'prepare-db/gtdb-rs220-phylum.merged.sig.zip',
+                        '',
                         'all bacterial and archaeal phyla (GTDB rs220)',
+                        {}, {}),
+    DatabaseDescription('genbank-plants-2024.07',
+                        'prepare-db/genbank-plants-2024.07.rocksdb',
+                        '',
+                        'plants (Genbank, July 2024)',
                         {}, {}),
     ]
 

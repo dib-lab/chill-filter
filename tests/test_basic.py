@@ -65,7 +65,7 @@ def test_display_flat(client):
     assert b'this looks like an assembly' in response.data
     assert b'<b>90.7%</b>\n  of your contigs' in response.data
     assert b'83.5% (2.1 Gbp)' in response.data
-    assert b'bacteria and archaea (GTDB rs220) ' in response.data
+    assert b'bacteria and archaea (GTDB rs220)' in response.data
     assert b'7.1% (176.1 Mbp)' in response.data
 
 
