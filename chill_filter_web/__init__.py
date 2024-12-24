@@ -184,6 +184,8 @@ def example():
 LoadedSig = collections.namedtuple('LoadedSig',
                                    ['ss', 'sample_name', 'prefix'])
 
+
+# generic function to load md5/filename => LoadedSig tuple
 def load_sig_by_urlpath(md5, filename):
     sigpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     if os.path.exists(sigpath):
@@ -194,7 +196,9 @@ def load_sig_by_urlpath(md5, filename):
             return LoadedSig(ss, sample_name, sigpath)
 
     return None
-    
+
+
+# index page for LoadedSig
 @app.route("/<string:md5>/<string:filename>/")
 def sig_index(md5, filename):
     websig = load_sig_by_urlpath(md5, filename)
@@ -210,6 +214,8 @@ def sig_index(md5, filename):
         sum_weighted_hashes=sum_weighted_hashes,
     )
 
+# download CSV for LoadedSig
+# @CTB: check if gather does not exist?
 @app.route("/<string:md5>/<string:filename>/download_csv")
 def sig_download_csv(md5, filename):
     websig = load_sig_by_urlpath(md5, filename)
@@ -225,6 +231,7 @@ def sig_download_csv(md5, filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)
 
 
+# download sketch for LoadedSig
 @app.route("/<string:md5>/<string:filename>/download")
 def sig_download(md5, filename):
     websig = load_sig_by_urlpath(md5, filename)
@@ -233,7 +240,7 @@ def sig_download(md5, filename):
 
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-
+# delete sketch for LoadedSig
 @app.route("/<string:md5>/<string:filename>/delete")
 def sig_delete(md5, filename):
     websig = load_sig_by_urlpath(md5, filename)
@@ -254,6 +261,7 @@ def sig_delete(md5, filename):
     return redirect(url_for("index"))
 
 
+# top level search!
 @app.route("/<string:md5>/<string:filename>/search")
 def sig_search(md5, filename):
     websig = load_sig_by_urlpath(md5, filename)
