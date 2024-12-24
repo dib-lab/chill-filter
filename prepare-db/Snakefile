@@ -51,7 +51,7 @@ rule plants_animals_and_gtdb:
     input:
         expand('outputs/{g}.k51.100k.sig.zip', g=GENOMES),
         'outputs/all-gtdb-rs220.k51.100k.sig.zip',
-        'downloads/genbank-plants-merged-2024.07.sig.zip',
+        'outputs/genbank-plants-merged-2024.07.sig.zip',
     output:
         'plants+animals+gtdb.mf.csv',
     shell: """
@@ -103,4 +103,13 @@ rule plants_individual_mf:
         "genbank-plants-2024.07.mf.csv",
     shell: """
         sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+rule plants_merged_all:
+    input:
+        "downloads/genbank-plants-2024.07.k51.s100_000.sig.zip",
+    output:
+        "outputs/genbank-plants-merged-2024.07.sig.zip",
+    shell: """
+        sourmash sig merge --set-name genbank-plants {input} -o {output}
     """
