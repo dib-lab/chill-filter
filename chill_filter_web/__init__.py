@@ -163,17 +163,33 @@ def example():
 
     return redirect(f"/{md5}/{filename}/search")
 
+## all the stuff underneath...
 
-@app.route("/")
-@app.route("/<path:path>")
-def get_by_md5(path):
-    print("PATH IS:", path, os.path.split(path))
-    path = path.split("/")
-    if len(path) != 3:
-        return redirect(url_for("index"))
+def load_sig_by_urlpath(md5, filename):
+    sigpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(sigpath):
+        ss = load_sig(sigpath)
+        if ss and ss.md5sum()[:8] == md5:
+            sample_name = ss.name or "(unnamed sample)"
 
-    md5, filename, action = path
+            return ss, sample_name
 
+    return None, None
+    
+@app.route("/<string:md5>/<string:filename>/")
+def get_by_md5_2(md5, filename):
+    ss, sample_name = load_sig_by_urlpath(md5, filename)
+    sum_weighted_hashes = sum(ss.minhash.hashes.values())
+    return render_template(
+        "sample_index.html",
+        sig=ss,
+        sig_filename=filename,
+        sample_name=sample_name,
+        sum_weighted_hashes=sum_weighted_hashes,
+    )
+
+@app.route("/<string:md5>/<string:filename>/<string:action>")
+def get_by_md5(md5, filename, action):
     # now try loading the sketch
     sigpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     success = False
@@ -275,14 +291,6 @@ def get_by_md5(path):
             )
 
     # default: sample index
-    sum_weighted_hashes = sum(ss.minhash.hashes.values())
-    return render_template(
-        "sample_index.html",
-        sig=ss,
-        sig_filename=filename,
-        sample_name=sample_name,
-        sum_weighted_hashes=sum_weighted_hashes,
-    )
 
 @app.route("/faq")
 def faq():
