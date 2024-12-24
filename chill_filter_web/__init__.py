@@ -116,7 +116,7 @@ def upload():
         ss = load_sig(outpath)
         if ss:
             md5 = ss.md5sum()[:8]
-            return redirect(f"/{md5}/{filename}/search")
+            return redirect(url_for("sig_search", md5=md5, filename=filename))
 
     # default - flash? redirect? @CTB
     return render_template("index.html")
@@ -145,7 +145,7 @@ def sketch():
             md5 = ss.md5sum()[:8]
             if app.config['TESTING']:
                 return "TESTING MODE: upload successful"
-            return redirect(f"/{md5}/{filename}/search")
+            return redirect(url_for("sig_search", md5=md5, filename=filename))
 
     # default: redirect to /
     return redirect(url_for("index"))
@@ -177,7 +177,7 @@ def example():
         print(f"copying example file: {frompath} {topath}")
         shutil.copy(frompath, topath)
 
-    return redirect(f"/{md5}/{filename}/search")
+    return redirect(url_for("sig_search", md5=md5, filename=filename))
 
 ## all the stuff underneath...
 
@@ -338,3 +338,12 @@ def sig_search(md5, filename):
             f_found=f_found,
             search_db=search_db,
         )
+
+
+# subsearch - against other database(s)
+@app.route("/<string:md5>/<string:filename>/subsearch/<string:db>/")
+def sig_subsearch(md5, filename):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
+        return redirect(url_for("index"))
+
