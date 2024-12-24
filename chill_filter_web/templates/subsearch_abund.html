@@ -1,24 +1,24 @@
 <!- template: sample_search_abund.html -->
 <head>
-  <title>search of {{ sample_name }} - chill-filter</title>
+  <title>subsearch of {{ sample_name }} against {{ search_db.shortname }} - chill-filter</title>
   {% include "_header.html" %}
 {% include "_header.html" %}
 </head>
 <body>
 <main class="container">
 
-<h2>Sample search summary for: {{ sample_name }}</h2>
+<h2>Search of {{ sample_name }} against database: {{ search_db.description }}</h2>
 <p>
 Based on the abundance profile, this looks like a set of reads.
 <p>
-  
-Based on the search results below, we estimate that at least <b>{{ "{:.1f}".format(f_found * 100) }}%</b> of your sequencing data will map to known reference genomes.
+We are searching this sample against a subset of reference genomes: <b>{{ search_db.description }}</b>
+  <p>
+Based on the search results below, we estimate that at least <b>{{ "{:.1f}".format(f_found * 100) }}%</b> of your sequencing data will map to reference genomes in this subset database. More may map to other genomes that aren't in this subset - that's what <a href='../../search'>the full search</a> shows</a>!
 <p>
-  Your sample is about <b>{{ "{:.1f}".format((1 - f_found) * 100) }}% unknown</b>. This could be new sequence and/or sequencing errors.
-<p>
-<!-- (<b>{{ "{:.1f}".format(f_unknown_high*  (1 - f_found) * 100) }}%</b> of the sample is unknown and high abundance, so that's probably not sequencing error.) -->
 
-<h2>Sample breakdown</h2>
+<h2>Sample breakdown against {{ search_db.description }}</h2>
+
+<p>
 
 <table border=1>
   <tr>
@@ -34,9 +34,8 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
   {% endfor %}
 </table>
 
-<a href='./' style="color:white"><button>Go to sample information page</a></button>
+<a href='../../search' style="color:white"><button>Return to full search</a></button>
 <a href="./download_csv" style="color:white"><button>Download spreadsheet of results</button></a>
-<a href="/" style="color:white"><button>Submit a new sample</button></a>
 
 {% include "_footer.html" %}
 </main>

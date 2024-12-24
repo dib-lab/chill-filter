@@ -14,6 +14,9 @@ rule all:
         'plants+animals+gtdb.merged.sig.zip',
         'gtdb.rocksdb',
         'gtdb.merged.sig.zip',
+        'podar-ref.rocksdb',
+        'gtdb-rs220-phylum.mf.csv',
+        'gtdb-rs220-phylum.rocksdb',
 
 rule index_manifest:
     input:
@@ -74,3 +77,20 @@ rule merge_microbial:
         sourmash sig merge {input} -o {output} --set-name "bacteria and archaea (GTDB rs220)"
     """
     
+rule podar_ref:
+    input:
+        "podar-ref.sig.zip",
+    output:
+        "podar-ref.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+rule gtdb_merged_phylum:
+    input:
+        "downloads/gtdb-rs220-phylum.sig.zip",
+    output:
+        "gtdb-rs220-phylum.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """

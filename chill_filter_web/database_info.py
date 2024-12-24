@@ -6,8 +6,11 @@ SCALED = 100_000
 
 
 class DatabaseDescription:
-    def __init__(self, shortname, filename,
+    def __init__(self,
+                 shortname,
+                 filename,
                  merged_sketch_filename,
+                 description,
                  sketch_to_display_names,
                  sketch_to_nextlevel,
                  *,
@@ -15,6 +18,7 @@ class DatabaseDescription:
         self.shortname = shortname
         self.filename = filename
         self.merged_sketch_filename = merged_sketch_filename
+        self.description = description
         self.sketch_to_display_names = sketch_to_display_names
         self.sketch_to_nextlevel = sketch_to_nextlevel
         self.default = default
@@ -28,13 +32,19 @@ class DatabaseDescription:
         ss = list(ss.signatures())[0]
         self.merged_hashes = ss.minhash.hashes
 
-    def get_display_name(self, x):
-        return self.sketch_to_display_names.get(x, x)
+    def get_display_name(self, match_name):
+        "Translate match names."
+        return self.sketch_to_display_names.get(match_name, match_name)
+
+    def get_nextlevel_db(self, match_name):
+        "Get the next database to search."
+        return self.sketch_to_nextlevel.get(match_name)
 
 _databases = [
     DatabaseDescription('all',
                         'prepare-db/plants+animals+gtdb.rocksdb',
                         'prepare-db/plants+animals+gtdb.merged.sig.zip',
+                        'all reference genomes',
                         {'bosTau9': 'cattle genome (bosTau9)',
                          'canFam6': 'dog genome (canFam6)',
                          'equCab3': 'horse genome (equCab3)',
@@ -45,15 +55,29 @@ _databases = [
                          'oviAri4': 'sheep genome (oviAri4)',
                          'susScr11': 'pig genome (suScr11)',
                          'genbank-plants': 'all plants (GenBank 12/2024)',
-                         }, {}, default=True),
+                         },
+                        {
+                            'bacteria and archaea (GTDB rs220)': 'gtdb-rs220-phylum',
+                        }, default=True),
     DatabaseDescription('gtdb-only',
                         'prepare-db/gtdb.rocksdb',
                         'prepare-db/gtdb.merged.sig.zip',
+                        'microbes only (GTDB rs220, merged)',
+                        {}, {}),
+    DatabaseDescription('podar-ref',
+                        'prepare-db/podar-ref.rocksdb',
+                        'prepare-db/podar-ref.merged.sig.zip',
+                        'podar-ref (64 microbes)',
+                        {}, {}),
+    DatabaseDescription('gtdb-rs220-phylum',
+                        'prepare-db/gtdb-rs220-phylum.rocksdb',
+                        'prepare-db/gtdb-rs220-phylum.merged.sig.zip',
+                        'all bacterial and archaeal phyla (GTDB rs220)',
                         {}, {}),
     ]
 
 
-def get_search_db(name=None):
+def get_search_db(*, name=None):
     if name:
         for db in _databases:
             if db.shortname == name:

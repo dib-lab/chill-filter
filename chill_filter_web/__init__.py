@@ -268,15 +268,11 @@ def sig_search(md5, filename):
     if websig is None:
         return redirect(url_for("index"))
 
-    ss = websig.ss
-    sample_name = websig.sample_name
-    sigpath = websig.prefix
-
     search_db = get_search_db()
 
-    csv_filename = f"{sigpath}.x.{search_db.shortname}.gather.csv"
+    csv_filename = f"{websig.prefix}.x.{search_db.shortname}.gather.csv"
     if not os.path.exists(csv_filename):
-        status = run_gather(sigpath, csv_filename, search_db)
+        status = run_gather(websig.prefix, csv_filename, search_db)
         if status != 0:
             return "search failed, for reasons that are probably not your fault"
         else:
@@ -288,6 +284,7 @@ def sig_search(md5, filename):
     try:
         gather_df = pd.read_csv(csv_filename)
         gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+        gather_df = gather_df.sort_values(by='gather_result_rank')
     except:
         gather_df = []
 
@@ -296,19 +293,20 @@ def sig_search(md5, filename):
         return render_template(
             "sample_search_no_matches.html",
             search_db=search_db,
-            sample_name=sample_name)
+            sample_name=websig.sample_name)
 
     # ok, now prep for display.
 
+    # provide match descriptions based on database-specific name rewriting
     gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
 
     # process abundance-weighted matches
-    if not sig_is_assembly(ss):
+    if not sig_is_assembly(websig.ss):
         #f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss,
         #         search_db)
         f_unknown_high, f_unknown_low = 0, 0
 
-        last_row = gather_df.tail(1).squeeze()
+        last_row = gather_df.sort_values(by='sum_weighted_found').tail(1).squeeze()
         sum_weighted_found = last_row["sum_weighted_found"]
         total_weighted_hashes = last_row["total_weighted_hashes"]
 
@@ -316,8 +314,8 @@ def sig_search(md5, filename):
 
         return render_template(
             "sample_search_abund.html",
-            sample_name=sample_name,
-            sig=ss,
+            sample_name=websig.sample_name,
+            sig=websig.ss,
             gather_df=gather_df,
             f_found=f_found,
             f_unknown_high=f_unknown_high,
@@ -327,13 +325,12 @@ def sig_search(md5, filename):
     # process flat matching (assembly)
     else:
         print('running flat')
-        last_row = gather_df.tail(1).squeeze()
         f_found = gather_df['f_unique_to_query'].sum()
 
         return render_template(
             "sample_search_flat.html",
-            sample_name=sample_name,
-            sig=ss,
+            sample_name=websig.sample_name,
+            sig=websig.ss,
             gather_df=gather_df,
             f_found=f_found,
             search_db=search_db,
@@ -341,9 +338,70 @@ def sig_search(md5, filename):
 
 
 # subsearch - against other database(s)
-@app.route("/<string:md5>/<string:filename>/subsearch/<string:db>/")
-def sig_subsearch(md5, filename):
+@app.route("/<string:md5>/<string:filename>/subsearch/<string:dbname>/")
+def sig_subsearch(md5, filename, dbname):
     websig = load_sig_by_urlpath(md5, filename)
     if websig is None:
         return redirect(url_for("index"))
 
+    search_db = get_search_db(name=dbname)
+
+    csv_filename = f"{websig.prefix}.x.{search_db.shortname}.gather.csv"
+    if not os.path.exists(csv_filename):
+        status = run_gather(websig.prefix, csv_filename, search_db)
+        if status != 0:
+            return "search failed, for reasons that are probably not your fault"
+        else:
+            print(f'output is in: "{csv_filename}"')
+    else:
+        print(f"using cached output in: '{csv_filename}'")
+
+    # read!
+    try:
+        gather_df = pd.read_csv(csv_filename)
+        gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+        gather_df = gather_df.sort_values(by='f_unique_weighted', ascending=False)
+    except:
+        gather_df = []
+
+    # no (significant) results?? exit.
+    if not len(gather_df):      # @CTB test
+        return render_template(
+            "subsearch_no_matches.html",
+            search_db=search_db,
+            sample_name=websig.sample_name)
+
+    # ok, now prep for display.
+
+    # provide match descriptions based on database-specific name rewriting
+    gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
+
+    # process abundance-weighted matches
+    if not sig_is_assembly(websig.ss):
+        last_row = gather_df.sort_values(by='sum_weighted_found').tail(1).squeeze()
+        sum_weighted_found = last_row["sum_weighted_found"]
+        total_weighted_hashes = last_row["total_weighted_hashes"]
+
+        f_found = sum_weighted_found / total_weighted_hashes
+
+        return render_template(
+            "subsearch_abund.html",
+            sample_name=websig.sample_name,
+            sig=websig.ss,
+            gather_df=gather_df,
+            f_found=f_found,
+            search_db=search_db,
+        )
+    # process flat matching (assembly)
+    else:
+        print('running flat')
+        f_found = gather_df['f_unique_to_query'].sum()
+
+        return render_template(
+            "sample_search_flat.html",
+            sample_name=websig.sample_name,
+            sig=websig.ss,
+            gather_df=gather_df,
+            f_found=f_found,
+            search_db=search_db,
+        )

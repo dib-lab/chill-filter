@@ -1,5 +1,6 @@
 # project-specific filters for jinja2 templating
 import markdown
+from markupsafe import Markup
 
 def markdownify(md):
     return markdown.markdown(md)
@@ -26,12 +27,23 @@ def unique_weighted_bp(item):
 def unique_flat_bp(item):
     return format_bp(item['unique_intersect_bp'])
 
+def subsearch_link(item, search_db):
+    nextlevel_name = search_db.get_nextlevel_db(item['match_name'])
+    descr = item['match_description']
+    #print(f"subsearch_link: for {item['match_name']} found {nextlevel_name}")
+    if nextlevel_name:
+        return Markup(f"<a href='./subsearch/{nextlevel_name}/'>{descr}</a>")
+    else:
+        return descr
+    
+
 filters_dict = {}
 filters_dict['markdownify'] = markdownify
 filters_dict['percent'] = percent
 filters_dict['format_bp'] = format_bp
 filters_dict['unique_weighted_bp'] = unique_weighted_bp
 filters_dict['unique_flat_bp'] = unique_flat_bp
+filters_dict['subsearch_link'] = subsearch_link
 
 def add_filters(env_d):
     for k, v in filters_dict.items():

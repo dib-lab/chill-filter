@@ -35,6 +35,23 @@ see [the sourmash documentation](https://sourmash.readthedocs.io/).
 You will be able to, eventually! But for now, you'll have follow up on
 our sequence composition report yourself.
 
+## What happens with overlaps between matches?
+
+If sequence is shared between two matches, it will be assigned uniquely
+to the first match in the list. This is known as "greedy assignment" and
+is part of the sourmash gather algorithm.
+
+## What if there's contamination in the database?
+
+We're 100% reliant on the genomes in the reference database, I'm afraid.
+So the match that's displayed is to the contents of the genome record.
+
+That having been said, if the contamination is something that is shared
+between multiple genomes in the reference collection, the match will
+be assigned to the largest match - which often will be the source of
+the contamination, not the contaminated genome. See the question above
+about overlaps!
+
 ## I've downloaded a CSV results file; how do I interpret it??
 
 chill-filter uses `sourmash gather` to calculate the results.
