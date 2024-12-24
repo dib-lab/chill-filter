@@ -32,6 +32,12 @@ def main():
     assert r.status_code == 200
     assert '95.0% (5.1 Gbp)' in r.text
 
+    url = args.host + '/example?filename=Bu5.abund.k51.s100_000.sig.zip'
+    print('getting:', url)
+    r = requests.get(url)
+    assert r.status_code == 200
+    assert 'subsearch/gtdb-rs220-phylum/' in r.text
+
     print('success!!')
 
 
