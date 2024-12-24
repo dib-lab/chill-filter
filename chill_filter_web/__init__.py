@@ -68,33 +68,39 @@ def create_app():
 ###
 
 
-# handles default index, plus upload of precalculated sketch.
-@app.route("/", methods=["GET", "POST"])
+# handles default index
+@app.route("/")
 def index():
-    if request.method == "POST":
-        # check if the post request has the file part
-        if "sketch" not in request.files:
-            flash("No file part")
-            return redirect(request.url)
-        file = request.files["sketch"]
+    return render_template("index.html")
 
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == "":
-            flash("No selected file")
-            return redirect(request.url)
 
-        if file:
-            filename = secure_filename(file.filename)
-            outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(outpath)
+# handles upload of precalculated sketch.
+@app.route("/upload", methods=["POST"])
+def upload():
+    # check if the post request has the file part
+    if "sketch" not in request.files:
+        flash("No file part")
+        return redirect(request.url)
 
-            ss = load_sig(outpath)
-            if ss:
-                md5 = ss.md5sum()[:8]
-                return redirect(f"/{md5}/{filename}/search")
+    file = request.files["sketch"]
 
-    # default
+    # If the user does not select a file, the browser submits an
+    # empty file without a filename.
+    if file.filename == "":
+        flash("No selected file") # @CTB
+        return redirect(request.url)
+
+    if file:
+        filename = secure_filename(file.filename)
+        outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(outpath)
+
+        ss = load_sig(outpath)
+        if ss:
+            md5 = ss.md5sum()[:8]
+            return redirect(f"/{md5}/{filename}/search")
+
+    # default - flash? redirect? @CTB
     return render_template("index.html")
 
 
