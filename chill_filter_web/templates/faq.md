@@ -76,6 +76,16 @@ for details.
 For now, please cite [the sourmash paper in the Journal of Open Source Software](https://joss.theoj.org/papers/10.21105/joss.06830#):
 
 >Irber et al., (2024). sourmash v4: A multitool to quickly search, compare, and analyze genomic and metagenomic data sets. Journal of Open Source Software, 9(98), 6830, https://doi.org/10.21105/joss.06830
+
+## How do you pay for this?
+
+We're skipping our normal avocado toast brunch order in order to support this
+site. We hope you appreciate our sacrifice!
+
+## What kind of resources are needed to run a chill-filter server?
+
+chill-filter.sourmash.bio is running on a Digital Ocean Basic Droplet,
+with 4 GB of RAM, 2 CPUs, and 80 GB of SSD space.
       
   {% endfilter %}
 
