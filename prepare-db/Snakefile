@@ -80,7 +80,7 @@ rule merge_microbial:
     
 rule podar_ref:
     input:
-        "podar-ref.sig.zip",
+        "downloads/podar-ref.sig.zip",
     output:
         "podar-ref.mf.csv",
     shell: """
