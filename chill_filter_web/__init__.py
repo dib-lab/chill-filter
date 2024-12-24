@@ -398,7 +398,7 @@ def sig_subsearch(md5, filename, dbname):
         f_found = gather_df['f_unique_to_query'].sum()
 
         return render_template(
-            "sample_search_flat.html",
+            "subsearch_flat.html",
             sample_name=websig.sample_name,
             sig=websig.ss,
             gather_df=gather_df,

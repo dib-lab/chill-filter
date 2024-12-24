@@ -29,7 +29,7 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
    <tr>
      <td> {{ item['f_unique_weighted']|percent }} ({{ item|unique_weighted_bp }})  </td>
      <td> {{ item|subsearch_link(search_db) }}  </td>
-     <td>{{ item['median_abund']|int }}x </td>
+     <td> {{ item['median_abund']|int }}x </td>
    </tr>
   {% endfor %}
 </table>
