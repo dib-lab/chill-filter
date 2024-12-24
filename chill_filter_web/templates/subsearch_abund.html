@@ -1,0 +1,44 @@
+<!- template: subsearch_abund.html -->
+<head>
+  <title>subsearch of {{ sample_name }} against {{ search_db.shortname }} - chill-filter</title>
+  {% include "_header.html" %}
+{% include "_header.html" %}
+</head>
+<body>
+<main class="container">
+
+<h2>Search of {{ sample_name }} against database: {{ search_db.description }}</h2>
+<p>
+Based on the abundance profile, this looks like a set of reads.
+<p>
+We are searching this sample against a subset of reference genomes: <b>{{ search_db.description }}</b>
+  <p>
+Based on the search results below, we estimate that at least <b>{{ "{:.1f}".format(f_found * 100) }}%</b> of your sequencing data will map to reference genomes in this subset database. More may map to other genomes that aren't in this subset - that's what <a href='../../search'>the full search</a> shows</a>!
+<p>
+
+<h2>Sample breakdown against {{ search_db.description }}</h2>
+
+<p>
+
+<table border=1>
+  <tr>
+    <th> <b>Percent assigned</b> </th>
+    <th> <b>Reference genome or collection </b></th>
+    <th> <b>Estimated sequencing depth in sample</b></tr>
+  {% for item in gather_df.to_dict(orient='records') %}
+   <tr>
+     <td> {{ item['f_unique_weighted']|percent }} ({{ item|unique_weighted_bp }})  </td>
+     <td> {{ item|subsearch_link(search_db) }}  </td>
+     <td>{{ item['median_abund']|int }}x </td>
+   </tr>
+  {% endfor %}
+</table>
+
+<a href='../../search' style="color:white"><button>Return to full search</a></button>
+<a href="./download_csv" style="color:white"><button>Download spreadsheet of results</button></a>
+
+{% include "_footer.html" %}
+</main>
+</body>
+
+</html>

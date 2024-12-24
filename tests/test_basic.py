@@ -6,6 +6,7 @@ def test_front(client):
     response = client.get("/")
     print(response.data)
     assert b"chill-filter: What's in my sample?" in response.data
+    assert b"this is the index page" in response.data
 
 
 def test_guide(client):
@@ -19,6 +20,7 @@ def test_faq(client):
 
 
 def test_upload_d_exists(app):
+    # check that we successfully copy over the test directory
     # this is really a test for the test fixtures ;)
     with app.app_context():
         dirpath = app.config['UPLOAD_FOLDER']
@@ -27,18 +29,21 @@ def test_upload_d_exists(app):
 
 
 def test_fail_example(client):
+    # test a bad example path
     response = client.get('/example?filename=XXX_Bu5.abund.k51.s100_000.sig.zip')
     print(response.data)
     assert response.status_code == 404
 
 
 def test_bad_example(client):
+    # test a k=31 sketch
     response = client.get('/example?filename=bad-example.sig.zip')
     print(response.data)
     assert response.status_code == 404
 
 
 def test_display_abund(client):
+    # test search of abund sketch
     response = client.get('/example?filename=Bu5.abund.k51.s100_000.sig.zip',
                           follow_redirects=True)
     print(response.data)
@@ -53,17 +58,24 @@ def test_display_abund(client):
 
 
 def test_display_flat(client):
+    # test search of a flat sketch
     response = client.get('/example?filename=Bu5.flat.k51.s100_000.sig.zip',
                           follow_redirects=True)
     print(response.data)
     assert b'this looks like an assembly' in response.data
     assert b'<b>90.7%</b>\n  of your contigs' in response.data
     assert b'83.5% (2.1 Gbp)' in response.data
-    assert b'bacteria and archaea (GTDB rs220) ' in response.data
+    assert b'bacteria and archaea (GTDB rs220)' in response.data
     assert b'7.1% (176.1 Mbp)' in response.data
 
 
+def test_incorrect_subpath(client):
+    response = client.get("/foo/bar", follow_redirects=True)
+    assert b"this is the index page" in response.data
+
+
 def test_display_no_matches(client):
+    # test display of no matches
     response = client.get('/ac5b62eb/no-matches.sig.zip/search',
                           follow_redirects=True)
     print(response.data)
@@ -71,7 +83,7 @@ def test_display_no_matches(client):
 
 
 def test_delete(app):
-    # this is really a test for the test fixtures ;)
+    # test delete sketch
     with app.app_context():
         client = app.test_client()
 
@@ -83,12 +95,16 @@ def test_delete(app):
         # the CSV should also exist
         assert os.path.exists(os.path.join(dirpath, 'Bu5.abund.k51.s100_000.sig.zip'))
         assert os.path.exists(os.path.join(dirpath, 'Bu5.abund.k51.s100_000.sig.zip.x.all.gather.csv'))
+
+        # delete!
         response = client.get('/97681062/Bu5.abund.k51.s100_000.sig.zip/delete')
+        # after delete, files should not exist
         assert not os.path.exists(os.path.join(dirpath, 'Bu5.abund.k51.s100_000.sig.zip'))
         assert not os.path.exists(os.path.join(dirpath, 'Bu5.abund.k51.s100_000.sig.zip.x.all.gather.csv'))
 
 
 def test_sample_index(client):
+    # test the sample index page
     # copy it in...
     response = client.get('/example?filename=Bu5.abund.k51.s100_000.sig.zip',
                           follow_redirects=True)
@@ -99,6 +115,7 @@ def test_sample_index(client):
 
 
 def test_sample_download_sketch(client, tmp_path):
+    # can we download a sketch?
     response = client.get('/example?filename=Bu5.abund.k51.s100_000.sig.zip',
                           follow_redirects=True)
     response = client.get('97681062/Bu5.abund.k51.s100_000.sig.zip/download')
@@ -107,10 +124,12 @@ def test_sample_download_sketch(client, tmp_path):
     with open(outfile, 'wb') as fp:
         fp.write(data)
 
+    # can we load it?
     assert utils.load_sig(outfile)
 
 
 def test_sample_download_csv(client):
+    # test download of CSV
     response = client.get('/example?filename=Bu5.abund.k51.s100_000.sig.zip',
                           follow_redirects=True)
     response = client.get('97681062/Bu5.abund.k51.s100_000.sig.zip/download_csv')

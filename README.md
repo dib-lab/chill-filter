@@ -19,8 +19,8 @@ conda activate chill
 2. Download the databases from [the Open Science Framework project](https://osf.io/m85ux/), and unpack them into `prepare-db/outputs/`.
 
 ```
-curl -JLO https://osf.io/download/bzu3v/
-unzip -d prepare-db/ -nu chill-filter-db-0.2.zip
+curl -JLO https://osf.io/download/5fw2v/
+unzip -d prepare-db/ -nu chill-filter-db-0.4.zip
 ```
 
 3. Run snakemake in the `sample-db/` directory to index the databases. It should take a few minutes at most.
@@ -38,4 +38,4 @@ python -m chill_filter_web -p 5000
 
 This will start a server at http://localhost:5000/
 
-5. Try uploading some FASTQ or FASTA files, or checkout the examples!
+5. Try uploading some FASTQ or FASTA files, or check out the examples!

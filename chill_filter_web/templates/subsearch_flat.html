@@ -1,22 +1,19 @@
-<!- template: sample_search_flat.html -->
+<!- template: subsearch_flat.html -->
 <head>
-  <title>search of {{ sample_name }} - chill-filter</title>
+  <title>search of {{ sample_name }} against {{ search_db.shortname }} - chill-filter</title>
   {% include "_header.html" %}
 {% include "_header.html" %}
 </head>
 <body>
 <main class="container">
 
-<h2>Sample search summary for: {{ sample_name }}</h2>
+<h2>Search summary of {{ sample_name }} against database: {{ search_db.description }}</h2>
 <p>
 Based on the abundance profile, this looks like an assembly.
 <p>
-  Based on the results below, we estimate that at least
-  <b>{{ "{:.1f}".format(f_found * 100) }}%</b>
-  of your contigs will align to a known reference genome.
-<p>
-Your sample is about {{ "{:.1f}".format((1 - f_found) * 100) }}% unknown. This is likely to be novel sequence!
-
+We are searching this sample against a subset of reference genomes: <b>{{ search_db.description }}</b>
+  <p>
+Based on the search results below, we estimate that at least <b>{{ "{:.1f}".format(f_found * 100) }}%</b> of your contigs will align to reference genomes in this subset database. More may align to other genomes that aren't in this subset - that's what <a href='../../search'>the full search</a> shows</a>!
 <h2>Sample breakdown</h2>
 
 <table border=1>

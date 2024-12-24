@@ -1,0 +1,22 @@
+<!- template: sample_search_abund.html -->
+<head>
+  <title>search of {{ sample_name }} against {{ search_db.shortname }} - chill-filter</title>
+  {% include "_header.html" %}
+{% include "_header.html" %}
+</head>
+<body>
+<main class="container">
+
+<h2>Search of {{ sample_name }} against database: {{ search_db.description }}</h2>
+<p>
+We found no matches to your sample, I'm afraid. If this is unexpected,
+please contact us with the URL of this page!
+<p>
+<a href='./' style="color:white"><button>Go to sample information page</a></button>
+<a href="/" style="color:white"><button>Submit a new sample</button></a>
+
+{% include "_footer.html" %}
+</main>
+</body>
+
+</html>

@@ -23,7 +23,7 @@ def test_sample_upload_precalc(app):
                               'Bu5.abund.k51.s100_000.sig.zip',
                               'application/zip'))
         
-        response = client.post('/', data=form_d,
+        response = client.post('/upload', data=form_d,
                                follow_redirects=True)
 
 

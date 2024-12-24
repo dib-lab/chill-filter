@@ -4,6 +4,7 @@ import time
 import gzip
 import shutil
 import glob
+import collections
 
 from flask import Flask, flash, request, redirect, url_for
 from flask import render_template, send_from_directory
@@ -13,7 +14,7 @@ import markdown
 import pandas as pd
 
 from . import jinja2_filters
-from .database_info import databases as sourmash_databases
+from .database_info import get_search_db
 from .database_info import MOLTYPE, KSIZE, SCALED
 from .utils import *
 
@@ -67,34 +68,57 @@ def create_app():
 ### actual Web site stuff
 ###
 
+# @CTB can we put this in a different module?
 
-# handles default index, plus upload of precalculated sketch.
-@app.route("/", methods=["GET", "POST"])
+
+# handles default index
+@app.route("/")
 def index():
-    if request.method == "POST":
-        # check if the post request has the file part
-        if "sketch" not in request.files:
-            flash("No file part")
-            return redirect(request.url)
-        file = request.files["sketch"]
+    return render_template("index.html")
 
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == "":
-            flash("No selected file")
-            return redirect(request.url)
 
-        if file:
-            filename = secure_filename(file.filename)
-            outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(outpath)
+@app.route("/faq")
+def faq():
+    return render_template("faq.md")
 
-            ss = load_sig(outpath)
-            if ss:
-                md5 = ss.md5sum()[:8]
-                return redirect(f"/{md5}/{filename}/search")
 
-    # default
+@app.route("/guide")
+def guide():
+    return render_template("guide.md")
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return ""
+
+
+# handles upload of precalculated sketch.
+@app.route("/upload", methods=["POST"])
+def upload():
+    # check if the post request has the file part
+    if "sketch" not in request.files:
+        flash("No file part")
+        return redirect(request.url)
+
+    file = request.files["sketch"]
+
+    # If the user does not select a file, the browser submits an
+    # empty file without a filename.
+    if file.filename == "":
+        flash("No selected file") # @CTB
+        return redirect(request.url)
+
+    if file:
+        filename = secure_filename(file.filename)
+        outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(outpath)
+
+        ss = load_sig(outpath)
+        if ss:
+            md5 = ss.md5sum()[:8]
+            return redirect(url_for("sig_search", md5=md5, filename=filename))
+
+    # default - flash? redirect? @CTB
     return render_template("index.html")
 
 
@@ -121,9 +145,7 @@ def sketch():
             md5 = ss.md5sum()[:8]
             if app.config['TESTING']:
                 return "TESTING MODE: upload successful"
-            return redirect(f"/{md5}/{filename}/search")
-
-    print('fallthru')
+            return redirect(url_for("sig_search", md5=md5, filename=filename))
 
     # default: redirect to /
     return redirect(url_for("index"))
@@ -136,157 +158,257 @@ def example():
     filename = secure_filename(filename)
     frompath = os.path.join(app.config['EXAMPLES_DIR'], filename)
     if not os.path.exists(frompath):
-        return render_template("error.html",
-                               error_message=f"example file <tt>{filename}</tt> not found in examples"), 404
+        msg = f"example file <tt>{filename}</tt> not found in examples"
+        return render_template("error.html", error_message=msg), \
+            404
 
     ss = load_sig(frompath)
     if ss is None:
         # doesn't match moltype etc, or other problems.
-        return render_template("error.html",
-                               error_message="Internal error: bad example file!?"), 404
+        msg = "Internal error: bad example file!?"
+        return render_template("error.html", error_message=msg), \
+            404
 
     md5 = ss.md5sum()[:8]
 
     # now build the filename & make sure it's in the upload dir.
     topath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     if not os.path.exists(topath):
-        print(f"copying: {frompath} {topath}")
+        print(f"copying example file: {frompath} {topath}")
         shutil.copy(frompath, topath)
 
-    return redirect(f"/{md5}/{filename}/search")
+    return redirect(url_for("sig_search", md5=md5, filename=filename))
+
+## all the stuff underneath...
+
+LoadedSig = collections.namedtuple('LoadedSig',
+                                   ['ss', 'sample_name', 'prefix'])
 
 
-@app.route("/")
-@app.route("/<path:path>")
-def get_by_md5(path):
-    print("PATH IS:", path, os.path.split(path))
-    path = path.split("/")
-    if len(path) != 3:
-        return redirect(url_for("index"))
-
-    md5, filename, action = path
-
-    # now try loading the sketch
+# generic function to load md5/filename => LoadedSig tuple
+def load_sig_by_urlpath(md5, filename):
     sigpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    success = False
-    ss = None
     if os.path.exists(sigpath):
         ss = load_sig(sigpath)
         if ss and ss.md5sum()[:8] == md5:
-            success = True
+            sample_name = ss.name or "(unnamed sample)"
 
-    print('SUCCESS VALUE:', success)
-    if not success:
+            return LoadedSig(ss, sample_name, sigpath)
+
+    return None
+
+
+# index page for LoadedSig
+@app.route("/<string:md5>/<string:filename>/")
+def sig_index(md5, filename):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
         return redirect(url_for("index"))
 
-    assert ss is not None
-    sample_name = ss.name or "(unnamed sample)"
-
-    # actions!
-    if action == 'download_csv':
-        csv_filename = filename + ".x.all.gather.csv" # @CTB
-        return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)
-    elif action == "download":
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    elif action == "delete":
-        file_list = glob.glob(f"{sigpath}.*.csv")
-        for filename in file_list + [sigpath]:
-            try:
-                print('removing:', (filename,))
-                os.unlink(filename)
-            except:
-                pass
-        return redirect(url_for("index"))
-    elif action == "search":
-        search_db = None
-        for db in sourmash_databases:
-            if db.default:
-                search_db = db
-                break
-
-        if search_db is None:
-            raise Exception("no default search DB?!")
-
-        csv_filename = f"{sigpath}.x.{search_db.shortname}.gather.csv"
-        if not os.path.exists(csv_filename):
-            status = run_gather(sigpath, csv_filename, search_db)
-            if status != 0:
-                return "search failed, for reasons that are probably not your fault"
-            else:
-                print(f'output is in: "{csv_filename}"')
-        else:
-            print(f"using cached output in: '{csv_filename}'")
-
-        # read!
-        try:
-            gather_df = pd.read_csv(csv_filename)
-            gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
-        except:
-            gather_df = []
-
-        # no (significant) results?? exit.
-        if not len(gather_df):
-            return render_template(
-                "sample_search_no_matches.html",
-                sample_name=sample_name)
-
-        # ok, now prep for display.
-
-        gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
-
-        # process abundance-weighted matches
-        if not sig_is_assembly(ss):
-            #f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss,
-            #         search_db)
-            f_unknown_high, f_unknown_low = 0, 0
-
-            last_row = gather_df.tail(1).squeeze()
-            sum_weighted_found = last_row["sum_weighted_found"]
-            total_weighted_hashes = last_row["total_weighted_hashes"]
-
-            f_found = sum_weighted_found / total_weighted_hashes
-
-            return render_template(
-                "sample_search_abund.html",
-                sample_name=sample_name,
-                sig=ss,
-                gather_df=gather_df,
-                f_found=f_found,
-                f_unknown_high=f_unknown_high,
-                f_unknown_low=f_unknown_low,
-            )
-        # process flat matching (assembly)
-        else:
-            print('running flat')
-            last_row = gather_df.tail(1).squeeze()
-            f_found = gather_df['f_unique_to_query'].sum()
-
-            return render_template(
-                "sample_search_flat.html",
-                sample_name=sample_name,
-                sig=ss,
-                gather_df=gather_df,
-                f_found=f_found,
-            )
-
-    # default: sample index
-    sum_weighted_hashes = sum(ss.minhash.hashes.values())
+    sum_weighted_hashes = sum(websig.ss.minhash.hashes.values())
     return render_template(
         "sample_index.html",
-        sig=ss,
+        sig=websig.ss,
         sig_filename=filename,
-        sample_name=sample_name,
+        sample_name=websig.sample_name,
         sum_weighted_hashes=sum_weighted_hashes,
     )
 
-@app.route("/faq")
-def faq():
-    return render_template("faq.md")
+# download CSV for LoadedSig
+# @CTB: check if gather does not exist?
+@app.route("/<string:md5>/<string:filename>/download_csv")
+def sig_download_csv(md5, filename):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
+        return redirect(url_for("index"))
 
-@app.route("/guide")
-def guide():
-    return render_template("guide.md")
+    search_db = get_search_db()
+    csv_filename = filename + f".x.{search_db.shortname}.gather.csv"
+    return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)
 
-@app.route("/favicon.ico")
-def favicon():
-    return ""
+
+# download sketch for LoadedSig
+@app.route("/<string:md5>/<string:filename>/download")
+def sig_download(md5, filename):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
+        return redirect(url_for("index"))
+
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+# delete sketch for LoadedSig
+@app.route("/<string:md5>/<string:filename>/delete")
+def sig_delete(md5, filename):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
+        return redirect(url_for("index"))
+
+    ss = websig.ss
+    sample_name = websig.sample_name
+    sigpath = websig.prefix
+
+    file_list = glob.glob(f"{sigpath}.*.csv")
+    for filename in file_list + [sigpath]:
+        try:
+            print('removing:', (filename,))
+            os.unlink(filename)
+        except:
+            pass
+    return redirect(url_for("index"))
+
+
+# top level search!
+@app.route("/<string:md5>/<string:filename>/search")
+def sig_search(md5, filename):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
+        return redirect(url_for("index"))
+
+    search_db = get_search_db()
+
+    csv_filename = f"{websig.prefix}.x.{search_db.shortname}.gather.csv"
+    if not os.path.exists(csv_filename):
+        status = run_gather(websig.prefix, csv_filename, search_db)
+        if status != 0:
+            return "search failed, for reasons that are probably not your fault"
+        else:
+            print(f'output is in: "{csv_filename}"')
+    else:
+        print(f"using cached output in: '{csv_filename}'")
+
+    # read!
+    try:
+        gather_df = pd.read_csv(csv_filename)
+        gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+        gather_df = gather_df.sort_values(by='gather_result_rank')
+    except:
+        gather_df = []
+
+    # no (significant) results?? exit.
+    if not len(gather_df):
+        return render_template(
+            "sample_search_no_matches.html",
+            search_db=search_db,
+            sample_name=websig.sample_name)
+
+    # ok, now prep for display.
+
+    # provide match descriptions based on database-specific name rewriting
+    gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
+
+    # process abundance-weighted matches
+    if not sig_is_assembly(websig.ss):
+        #f_unknown_high, f_unknown_low = estimate_weight_of_unknown(ss,
+        #         search_db)
+        f_unknown_high, f_unknown_low = 0, 0
+
+        last_row = gather_df.sort_values(by='sum_weighted_found').tail(1).squeeze()
+        sum_weighted_found = last_row["sum_weighted_found"]
+        total_weighted_hashes = last_row["total_weighted_hashes"]
+
+        f_found = sum_weighted_found / total_weighted_hashes
+
+        return render_template(
+            "sample_search_abund.html",
+            sample_name=websig.sample_name,
+            sig=websig.ss,
+            gather_df=gather_df,
+            f_found=f_found,
+            f_unknown_high=f_unknown_high,
+            f_unknown_low=f_unknown_low,
+            search_db=search_db,
+        )
+    # process flat matching (assembly)
+    else:
+        print('running flat')
+        f_found = gather_df['f_unique_to_query'].sum()
+
+        return render_template(
+            "sample_search_flat.html",
+            sample_name=websig.sample_name,
+            sig=websig.ss,
+            gather_df=gather_df,
+            f_found=f_found,
+            search_db=search_db,
+        )
+
+
+# subsearch - against other database(s)
+@app.route("/<string:md5>/<string:filename>/subsearch/<string:dbname>/")
+def sig_subsearch(md5, filename, dbname):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
+        return redirect(url_for("index"))
+
+    search_db = get_search_db(name=dbname)
+
+    csv_filename = f"{websig.prefix}.x.{search_db.shortname}.gather.csv"
+    if not os.path.exists(csv_filename):
+        status = run_gather(websig.prefix, csv_filename, search_db)
+        if status != 0:
+            return "search failed, for reasons that are probably not your fault"
+        else:
+            print(f'output is in: "{csv_filename}"')
+    else:
+        print(f"using cached output in: '{csv_filename}'")
+
+    # read!
+    try:
+        gather_df = pd.read_csv(csv_filename)
+        gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+        gather_df = gather_df.sort_values(by='f_unique_weighted', ascending=False)
+    except:
+        gather_df = []
+
+    # no (significant) results?? exit.
+    if not len(gather_df):      # @CTB test
+        return render_template(
+            "subsearch_no_matches.html",
+            search_db=search_db,
+            sample_name=websig.sample_name)
+
+    # ok, now prep for display.
+
+    # provide match descriptions based on database-specific name rewriting
+    gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
+
+    # process abundance-weighted matches
+    if not sig_is_assembly(websig.ss):
+        last_row = gather_df.sort_values(by='sum_weighted_found').tail(1).squeeze()
+        sum_weighted_found = last_row["sum_weighted_found"]
+        total_weighted_hashes = last_row["total_weighted_hashes"]
+
+        f_found = sum_weighted_found / total_weighted_hashes
+
+        return render_template(
+            "subsearch_abund.html",
+            sample_name=websig.sample_name,
+            sig=websig.ss,
+            gather_df=gather_df,
+            f_found=f_found,
+            search_db=search_db,
+        )
+    # process flat matching (assembly)
+    else:
+        print('running flat')
+        f_found = gather_df['f_unique_to_query'].sum()
+
+        return render_template(
+            "subsearch_flat.html",
+            sample_name=websig.sample_name,
+            sig=websig.ss,
+            gather_df=gather_df,
+            f_found=f_found,
+            search_db=search_db,
+        )
+
+
+# subsearch - download CSV
+@app.route("/<string:md5>/<string:filename>/subsearch/<string:dbname>/download_csv")
+def sig_subsearch_download_csv(md5, filename, dbname):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
+        return redirect(url_for("index"))
+
+    csv_filename = f"{filename}.x.{dbname}.gather.csv"
+    return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)

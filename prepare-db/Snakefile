@@ -14,6 +14,10 @@ rule all:
         'plants+animals+gtdb.merged.sig.zip',
         'gtdb.rocksdb',
         'gtdb.merged.sig.zip',
+        'podar-ref.rocksdb',
+        'gtdb-rs220-phylum.mf.csv',
+        'gtdb-rs220-phylum.rocksdb',
+        'genbank-plants-2024.07.rocksdb',
 
 rule index_manifest:
     input:
@@ -47,7 +51,7 @@ rule plants_animals_and_gtdb:
     input:
         expand('outputs/{g}.k51.100k.sig.zip', g=GENOMES),
         'outputs/all-gtdb-rs220.k51.100k.sig.zip',
-        'downloads/genbank-plants-merged-2024.07.sig.zip',
+        'outputs/genbank-plants-merged-2024.07.sig.zip',
     output:
         'plants+animals+gtdb.mf.csv',
     shell: """
@@ -74,3 +78,38 @@ rule merge_microbial:
         sourmash sig merge {input} -o {output} --set-name "bacteria and archaea (GTDB rs220)"
     """
     
+rule podar_ref:
+    input:
+        "downloads/podar-ref.sig.zip",
+    output:
+        "podar-ref.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+rule gtdb_merged_phylum:
+    input:
+        "downloads/gtdb-rs220-phylum.sig.zip",
+    output:
+        "gtdb-rs220-phylum.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+rule plants_individual_mf:
+    input:
+        "downloads/genbank-plants-2024.07.k51.s100_000.sig.zip",
+    output:
+        "genbank-plants-2024.07.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+rule plants_merged_all:
+    input:
+        "downloads/genbank-plants-2024.07.k51.s100_000.sig.zip",
+    output:
+        "outputs/genbank-plants-merged-2024.07.sig.zip",
+    shell: """
+        sourmash sig merge --set-name genbank-plants {input} -o {output}
+    """

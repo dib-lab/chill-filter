@@ -21,10 +21,10 @@ def load_sig(fullpath):
     return None
 
 
-def run_gather(outpath, csv_filename, db_info):
+def run_gather(sigpath, csv_filename, db_info):
     start = time.time()
     status = branch.do_fastmultigather(
-        outpath,
+        sigpath,
         db_info.filename,
         0,
         KSIZE,

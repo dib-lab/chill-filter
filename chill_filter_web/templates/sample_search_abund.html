@@ -28,8 +28,8 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
   {% for item in gather_df.to_dict(orient='records') %}
    <tr>
      <td> {{ item['f_unique_weighted']|percent }} ({{ item|unique_weighted_bp }})  </td>
-     <td> {{ item['match_description'] }}  </td>
-     <td>{{ item['median_abund']|int }}x </td>
+     <td> {{ item|subsearch_link(search_db) }}  </td>
+     <td> {{ item['median_abund']|int }}x </td>
    </tr>
   {% endfor %}
 </table>
