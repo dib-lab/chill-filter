@@ -6,6 +6,7 @@ def test_front(client):
     response = client.get("/")
     print(response.data)
     assert b"chill-filter: What's in my sample?" in response.data
+    assert b"this is the index page" in response.data
 
 
 def test_guide(client):
@@ -66,6 +67,11 @@ def test_display_flat(client):
     assert b'83.5% (2.1 Gbp)' in response.data
     assert b'bacteria and archaea (GTDB rs220) ' in response.data
     assert b'7.1% (176.1 Mbp)' in response.data
+
+
+def test_incorrect_subpath(client):
+    response = client.get("/foo/bar", follow_redirects=True)
+    assert b"this is the index page" in response.data
 
 
 def test_display_no_matches(client):

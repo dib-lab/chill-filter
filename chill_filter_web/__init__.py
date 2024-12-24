@@ -179,6 +179,9 @@ def load_sig_by_urlpath(md5, filename):
 @app.route("/<string:md5>/<string:filename>/")
 def get_by_md5_2(md5, filename):
     ss, sample_name = load_sig_by_urlpath(md5, filename)
+    if ss is None:
+        return redirect(url_for("index"))
+
     sum_weighted_hashes = sum(ss.minhash.hashes.values())
     return render_template(
         "sample_index.html",
