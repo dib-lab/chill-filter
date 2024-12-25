@@ -5,6 +5,7 @@ import requests
 import sourmash
 import json
 import os
+import time
 
 
 def main():
@@ -30,13 +31,16 @@ def main():
 
     url = args.host + '/sketch'
     print(os.getpid(), 'posting:', url)
+    start = time.time()
     r = requests.post(url, data=dict(signature=sig2_json))
+    finish = time.time()
 
     if args.write_result_to_pidfile:
         status_code = r.status_code
         pidfile = f"upload.pid={os.getpid()}.status={status_code}.html"
         with open(pidfile, "wt") as fp:
             fp.write(r.text)
+            fp.write(f"\n<!-- start: {start}; finish: {finish}; duration: {finish - start} -->\n")
 
         sys.exit(0)
 
