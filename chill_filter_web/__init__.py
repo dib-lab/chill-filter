@@ -98,7 +98,7 @@ def favicon():
 def upload():
     # check if the post request has the file part
     if "sketch" not in request.files:
-        flash("No file part")
+        #flash("No file part")
         return redirect(request.url)
 
     file = request.files["sketch"]
@@ -106,7 +106,7 @@ def upload():
     # If the user does not select a file, the browser submits an
     # empty file without a filename.
     if file.filename == "":
-        flash("No selected file") # @CTB
+        #flash("No selected file") # @CTB
         return redirect(request.url)
 
     if file:
@@ -116,8 +116,13 @@ def upload():
 
         ss = load_sig(outpath)
         if ss:
-            md5 = ss.md5sum()[:8]
-            return redirect(url_for("sig_search", md5=md5, filename=filename))
+            if ss.minhash:      # not empty?
+                md5 = ss.md5sum()[:8]
+                return redirect(url_for("sig_search", md5=md5, filename=filename))
+            else:
+                msg = "sketch is empty; please use a query larger than 500kb!"
+                return render_template("error.html", error_message=msg), \
+                    404
 
     # default - flash? redirect? @CTB
     return render_template("index.html")
@@ -129,7 +134,6 @@ def sketch():
     # check if the post request has the file part
     if "signature" not in request.form:
         #flash("No file part") # @CTB
-        print("NO SIGNATURE")
         return redirect(request.url)
 
     # retrieve uploaded JSON and save to unique filename
@@ -142,14 +146,18 @@ def sketch():
     # ok, can we load it?
     ss = load_sig(outpath)
     if ss:
-        # success? build URL & redirect
-        md5 = ss.md5sum()[:8]
-        if app.config['TESTING']:
-            return "TESTING MODE: upload successful"
+        if ss.minhash:          # not empty?
+            # success? build URL & redirect
+            md5 = ss.md5sum()[:8]
+            if app.config['TESTING']:
+                return "TESTING MODE: upload successful"
 
-        return redirect(url_for("sig_search", md5=md5, filename=filename))
+            return redirect(url_for("sig_search", md5=md5, filename=filename))
+        else:
+            msg = "sketch is empty; please use a query larger than 500kb!"
+            return render_template("error.html", error_message=msg), \
+                404
     else:
-        print("BAD SIGNATURE")
         os.unlink(outpath)      # remove unused sketches
 
     # default: redirect to /

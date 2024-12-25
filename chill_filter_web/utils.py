@@ -13,8 +13,7 @@ def load_sig(fullpath):
         ss = ss.select(moltype=MOLTYPE, ksize=KSIZE, scaled=SCALED)
         if len(ss) == 1:
             ss = list(ss.signatures())[0]
-            if len(ss.minhash):
-                return ss
+            return ss
     except:
         pass
 
@@ -46,6 +45,7 @@ def calc_abund_stats_above_1(mh):
     f_above_1 = n_above_1/len(mh)
 
     return n_above_1
+
 
 def sig_is_assembly(ss):
     mh = ss.minhash
