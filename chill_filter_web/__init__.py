@@ -5,6 +5,7 @@ import gzip
 import shutil
 import glob
 import collections
+import uuid
 
 from flask import Flask, flash, request, redirect, url_for
 from flask import render_template, send_from_directory
@@ -97,7 +98,7 @@ def favicon():
 def upload():
     # check if the post request has the file part
     if "sketch" not in request.files:
-        flash("No file part")
+        #flash("No file part")
         return redirect(request.url)
 
     file = request.files["sketch"]
@@ -105,7 +106,7 @@ def upload():
     # If the user does not select a file, the browser submits an
     # empty file without a filename.
     if file.filename == "":
-        flash("No selected file") # @CTB
+        #flash("No selected file") # @CTB
         return redirect(request.url)
 
     if file:
@@ -115,37 +116,49 @@ def upload():
 
         ss = load_sig(outpath)
         if ss:
-            md5 = ss.md5sum()[:8]
-            return redirect(url_for("sig_search", md5=md5, filename=filename))
+            if ss.minhash:      # not empty?
+                md5 = ss.md5sum()[:8]
+                return redirect(url_for("sig_search", md5=md5, filename=filename))
+            else:
+                msg = "sketch is empty; please use a query larger than 500kb!"
+                return render_template("error.html", error_message=msg), \
+                    404
 
     # default - flash? redirect? @CTB
     return render_template("index.html")
 
 
 # handles client-side sketch w/JSON sig
-@app.route("/sketch", methods=["GET", "POST"])
+@app.route("/sketch", methods=['POST'])
 def sketch():
-    if request.method == "POST":
-        # check if the post request has the file part
-        if "signature" not in request.form:
-            flash("No file part") # @CTB
-            return redirect(request.url)
+    # check if the post request has the file part
+    if "signature" not in request.form:
+        #flash("No file part") # @CTB
+        return redirect(request.url)
 
-        # take uploaded file and save
-        sig_json = request.form["signature"]
-        success = False
-        filename = f"t{int(time.time())}.sig.gz"
-        outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        with gzip.open(outpath, "wt") as fp:
-            fp.write(f"[{sig_json}]")
+    # retrieve uploaded JSON and save to unique filename
+    sig_json = request.form["signature"]
+    filename = f"t{uuid.uuid4().hex}.sig.gz"
+    outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    with gzip.open(outpath, "wt") as fp:
+        fp.write(f"[{sig_json}]")
 
-        ss = load_sig(outpath)
-        if ss:
+    # ok, can we load it?
+    ss = load_sig(outpath)
+    if ss:
+        if ss.minhash:          # not empty?
             # success? build URL & redirect
             md5 = ss.md5sum()[:8]
             if app.config['TESTING']:
                 return "TESTING MODE: upload successful"
+
             return redirect(url_for("sig_search", md5=md5, filename=filename))
+        else:
+            msg = "sketch is empty; please use a query larger than 500kb!"
+            return render_template("error.html", error_message=msg), \
+                404
+    else:
+        os.unlink(outpath)      # remove unused sketches
 
     # default: redirect to /
     return redirect(url_for("index"))
@@ -205,13 +218,20 @@ def sig_index(md5, filename):
     if websig is None:
         return redirect(url_for("index"))
 
-    sum_weighted_hashes = sum(websig.ss.minhash.hashes.values())
+    mh = websig.ss.minhash
+    num_distinct_hashes = len(mh)
+    sum_weighted_hashes = sum(mh.hashes.values())
+    n_above_1 = calc_abund_stats_above_1(mh)
+    f_above_1 = n_above_1 / len(mh)
     return render_template(
         "sample_index.html",
         sig=websig.ss,
         sig_filename=filename,
         sample_name=websig.sample_name,
+        num_distinct_hashes=num_distinct_hashes,
         sum_weighted_hashes=sum_weighted_hashes,
+        n_above_1=n_above_1,
+        f_above_1=f_above_1,
     )
 
 # download CSV for LoadedSig

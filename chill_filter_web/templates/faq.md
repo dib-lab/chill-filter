@@ -32,8 +32,9 @@ see [the sourmash documentation](https://sourmash.readthedocs.io/).
 
 ## How can I see which specific microbial or plant genomes are in my sample?
 
-You will be able to, eventually! But for now, you'll have follow up on
-our sequence composition report yourself.
+You can see matches to specific plant genomes, but not to specific
+microbial genomes. You will be able to, eventually! But for now,
+you'll have follow up on our sequence composition report yourself.
 
 ## What happens with overlaps between matches?
 
@@ -43,8 +44,10 @@ is part of the sourmash gather algorithm.
 
 ## What if there's contamination in the database?
 
-We're 100% reliant on the genomes in the reference database, I'm afraid.
-So the match that's displayed is to the contents of the genome record.
+We're 100% reliant on the genomes in the reference database, so the
+match that's displayed is to the contents of the genome record. If
+the genome record is contaminated, then that will be part of the match
+statistics.
 
 That having been said, if the contamination is something that is shared
 between multiple genomes in the reference collection, the match will
@@ -73,6 +76,16 @@ for details.
 For now, please cite [the sourmash paper in the Journal of Open Source Software](https://joss.theoj.org/papers/10.21105/joss.06830#):
 
 >Irber et al., (2024). sourmash v4: A multitool to quickly search, compare, and analyze genomic and metagenomic data sets. Journal of Open Source Software, 9(98), 6830, https://doi.org/10.21105/joss.06830
+
+## How do you pay for this?
+
+We're skipping our normal avocado toast brunch order in order to support this
+site. We hope you appreciate our sacrifice!
+
+## What kind of resources are needed to run a chill-filter server?
+
+chill-filter.sourmash.bio is running on a Digital Ocean Basic Droplet,
+with 4 GB of RAM, 2 CPUs, and 80 GB of SSD space.
       
   {% endfilter %}
 

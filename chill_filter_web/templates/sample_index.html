@@ -12,12 +12,19 @@ Name: {{ sig.name|default("(no name)", true) }}<p>
 
 Estimated size of sample: {{ sum_weighted_hashes * sig.minhash.scaled / 1e6 }} Mbp<p>
 
-Filename: <tt>{{ sig_filename }}</tt>    
-    
+Filename: <tt>{{ sig_filename }}</tt>
 
+<h2>Technical details:</h2>
+<ul>
+<li> ksize: {{ sig.minhash.ksize }}
+<li> scaled: {{ sig.minhash.scaled }}
+<li> Number of distinct hashes: {{ num_distinct_hashes }}
+<li> Total weighted hashes: {{ sum_weighted_hashes }}
+<li> Number of hashes with abundance > 1: {{ n_above_1 }} ({{ f_above_1|percent }})
+</ul>
 <p>
   
-<a href='./search' style="color:white"><button>Screen sample against genomes</a></button>
+<a href='./search' style="color:white"><button>Screen sample</a></button>
 <a href="./download" style="color:white"><button>Download sourmash sketch</button></a>
 <a href="./delete" style="color:white"><button>Delete sample</button></a>
 <a href="/" style="color:white"><button>Submit a new sample</button></a>
