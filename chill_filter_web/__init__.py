@@ -5,6 +5,7 @@ import gzip
 import shutil
 import glob
 import collections
+import uuid
 
 from flask import Flask, flash, request, redirect, url_for
 from flask import render_template, send_from_directory
@@ -123,29 +124,33 @@ def upload():
 
 
 # handles client-side sketch w/JSON sig
-@app.route("/sketch", methods=["GET", "POST"])
+@app.route("/sketch")
 def sketch():
-    if request.method == "POST":
-        # check if the post request has the file part
-        if "signature" not in request.form:
-            flash("No file part") # @CTB
-            return redirect(request.url)
+    # check if the post request has the file part
+    if "signature" not in request.form:
+        #flash("No file part") # @CTB
+        print("NO SIGNATURE")
+        return redirect(request.url)
 
-        # take uploaded file and save
-        sig_json = request.form["signature"]
-        success = False
-        filename = f"t{int(time.time())}.sig.gz"
-        outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        with gzip.open(outpath, "wt") as fp:
-            fp.write(f"[{sig_json}]")
+    # retrieve uploaded JSON and save to unique filename
+    sig_json = request.form["signature"]
+    filename = f"t{uuid.uuid4().hex}.sig.gz"
+    outpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    with gzip.open(outpath, "wt") as fp:
+        fp.write(f"[{sig_json}]")
 
-        ss = load_sig(outpath)
-        if ss:
-            # success? build URL & redirect
-            md5 = ss.md5sum()[:8]
-            if app.config['TESTING']:
-                return "TESTING MODE: upload successful"
-            return redirect(url_for("sig_search", md5=md5, filename=filename))
+    # ok, can we load it?
+    ss = load_sig(outpath)
+    if ss:
+        # success? build URL & redirect
+        md5 = ss.md5sum()[:8]
+        if app.config['TESTING']:
+            return "TESTING MODE: upload successful"
+
+        return redirect(url_for("sig_search", md5=md5, filename=filename))
+    else:
+        print("BAD SIGNATURE")
+        os.unlink(outpath)      # remove unused sketches
 
     # default: redirect to /
     return redirect(url_for("index"))
