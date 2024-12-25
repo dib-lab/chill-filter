@@ -124,7 +124,7 @@ def upload():
 
 
 # handles client-side sketch w/JSON sig
-@app.route("/sketch")
+@app.route("/sketch", methods=['POST'])
 def sketch():
     # check if the post request has the file part
     if "signature" not in request.form:
