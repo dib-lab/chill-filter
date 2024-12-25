@@ -8,3 +8,4 @@ chill_filter.egg-info/
 dist/
 build/
 chill-data/
+prepare-db/downloads
