@@ -210,13 +210,20 @@ def sig_index(md5, filename):
     if websig is None:
         return redirect(url_for("index"))
 
-    sum_weighted_hashes = sum(websig.ss.minhash.hashes.values())
+    mh = websig.ss.minhash
+    num_distinct_hashes = len(mh)
+    sum_weighted_hashes = sum(mh.hashes.values())
+    n_above_1 = calc_abund_stats_above_1(mh)
+    f_above_1 = n_above_1 / len(mh)
     return render_template(
         "sample_index.html",
         sig=websig.ss,
         sig_filename=filename,
         sample_name=websig.sample_name,
+        num_distinct_hashes=num_distinct_hashes,
         sum_weighted_hashes=sum_weighted_hashes,
+        n_above_1=n_above_1,
+        f_above_1=f_above_1,
     )
 
 # download CSV for LoadedSig

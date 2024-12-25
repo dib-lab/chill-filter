@@ -40,17 +40,22 @@ def run_gather(sigpath, csv_filename, db_info):
     return status
 
 
-def sig_is_assembly(ss):
-    mh = ss.minhash
-    # track abundance set? => assembly
-    if not mh.track_abundance:
-        print('ZZZ1 - is assembly')
-        return True
-
+def calc_abund_stats_above_1(mh):
     # count the number > 1 in abundance
     n_above_1 = sum(1 for (hv, ha) in mh.hashes.items() if ha > 1)
     f_above_1 = n_above_1/len(mh)
-    print(f'n_above_1: {n_above_1}, of {len(mh)}, f={f_above_1:.3}')
+
+    return n_above_1
+
+def sig_is_assembly(ss):
+    mh = ss.minhash
+
+    # track abundance not set? => assembly
+    if not mh.track_abundance:
+        return True
+
+    n_above_1 = calc_abund_stats_above_1(mh)
+    f_above_1 = n_above_1 / len(mh)
 
     # more than 10% > 1? => probably not assembly
     if f_above_1 > 0.1:
