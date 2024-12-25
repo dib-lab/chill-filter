@@ -2,7 +2,7 @@
 name = "chill-filter"
 description = "rapid sample screening for shotgun DNA sequencing data sets"
 readme = "README.md"
-version = "0.4.0"
+version = "0.4.1"
 authors = [
   { name="C. Titus Brown" },
 ]
