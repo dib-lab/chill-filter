@@ -30,6 +30,39 @@ delete your sketch at any time.  <p> For more information on
 sketching, as well as an over-abundance of technical details, please
 see [the sourmash documentation](https://sourmash.readthedocs.io/).
 
+## Should I subset my data to make things go faster?
+
+We highly recommend analyzing your entire data set - no filtering,
+subsetting, or removing reads. chill-filter's speed will not be
+affected. But of course you're welcome to try out different
+approaches - and we're happy to chat about it in
+[the issue tracker!](https://github.com/dib-lab/chill-filter/issues)
+
+## How can I do a combined analysis of several sequencing runs?
+
+For now, you either have to combine all your files into one FASTA/FASTQ
+file and sketch that, or use a command line tool to build a combined
+sketch. Here's the command line you can use with sourmash:
+```
+sourmash sketch dna -p k=51,scaled=100000 [ list of files] --name SampleName -o combined.sig.zip
+```
+although there are other, faster programs you can use (e.g. [manysketch](https://github.com/sourmash-bio/sourmash_plugin_branchwater/tree/main/doc)).
+
+You can then upload the resulting `combined.sig.zip` on the front page for a combined analysis!
+
+## How can I analyze a dozen different samples?
+
+If you want to use the Web site, you'll need to upload each sample separately.
+Sorry!
+
+There are ways to analyze hundreds to thousands of samples at the
+command line. This requires installing the sourmash software and 
+preparing some databases; ask us for details in
+[the issue tracker!](https://github.com/dib-lab/chill-filter/issues)
+
+We're working on a REST API so that you can use chill-filter from the
+command line without installing the databases locally, too.
+
 ## How can I see which specific microbial or plant genomes are in my sample?
 
 You can see matches to specific plant genomes, but not to specific
