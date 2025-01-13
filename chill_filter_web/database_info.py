@@ -55,10 +55,14 @@ _databases = [
                          'oviAri4': 'sheep genome (oviAri4)',
                          'susScr11': 'pig genome (suScr11)',
                          'genbank-plants': 'all plants (GenBank July 2024)',
+                         'genbank-fungi': 'all fungi (GenBank Jan 2025)',
+                         'euk-other': 'remaining eukaryotes (GenBank Jan 2025)'
                          },
                         {
                             'bacteria and archaea (GTDB rs220)': 'gtdb-rs220-genus',
                             'genbank-plants': 'genbank-plants-2024.07',
+                            'genbank-fungi': 'genbank-fungi',
+                            'euk-other': 'euk-other',
                         }, default=True),
     DatabaseDescription('gtdb-only',
                         'prepare-db/gtdb.rocksdb',
@@ -84,6 +88,16 @@ _databases = [
                         'prepare-db/genbank-plants-2024.07.rocksdb',
                         '',
                         'plants (Genbank, July 2024)',
+                        {}, {}),
+    DatabaseDescription('genbank-fungi',
+                        'prepare-db/fungi.rocksdb',
+                        '',
+                        'all fungi (Genbank, Jan 2025)',
+                        {}, {}),
+    DatabaseDescription('euk-other',
+                        'prepare-db/euk-other.rocksdb',
+                        '',
+                        'remaining eukaryotes (Genbank, Jan 2025)',
                         {}, {}),
     ]
 
