@@ -1,9 +1,15 @@
 import time
 
 import sourmash
+from sourmash import commands
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 
 from .database_info import MOLTYPE, KSIZE, SCALED
+
+
+class FakeArgs:
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
 
 
 def load_sig(fullpath):
@@ -22,17 +28,53 @@ def load_sig(fullpath):
 
 def run_gather(sigpath, csv_filename, db_info):
     start = time.time()
-    status = branch.do_fastmultigather(
-        sigpath,
-        db_info.filename,
-        0,
-        KSIZE,
-        SCALED,
-        MOLTYPE,
-        csv_filename,
-        False,
-        False,
-    )
+    status = 0
+    # prepare args object
+    args = FakeArgs(quiet=True,
+                    debug=False,
+                    ksize=KSIZE,
+                    scaled=SCALED,
+                    picklist=None,
+                    moltype=MOLTYPE,
+                    md5=None,
+                    query=sigpath,
+                    linear=False,
+                    prefetch=True,
+                    save_prefetch=None,
+                    save_prefetch_csv=False,
+                    output=csv_filename,
+                    save_matches=False,
+                    threshold_bp=0,
+                    output_unassigned=False,
+                    dna=True,
+                    protein=False,
+                    dayhoff=False,
+                    hp=False,
+                    skipm1n3=False,
+                    skipm2n3=False,
+                    include_db_pattern=None,
+                    exclude_db_pattern=None,
+                    cache_size=0,
+                    databases=db_info.filenames,
+                    fail_on_empty_database=True,
+                    ignore_abundance=False,
+                    estimate_ani_ci=True,
+                    num_results=0,
+                    )
+    
+    commands.gather(args)
+    if 0:
+        status = branch.do_fastmultigather(
+            sigpath,
+            db_info.filename,
+            0,
+            KSIZE,
+            SCALED,
+            MOLTYPE,
+            csv_filename,
+            False,
+            False,
+        )
     end = time.time()
 
     print(f"branchwater gather status: {status}; time: {end - start:.2f}s")
