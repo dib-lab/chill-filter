@@ -19,6 +19,8 @@ from .database_info import get_search_db
 from .database_info import MOLTYPE, KSIZE, SCALED
 from .utils import *
 
+UNIQUE_INTERSECT_BP_THRESHOLD = 3*SCALED
+
 default_settings = dict(
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../chill-data'),
     EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "examples/"),
@@ -299,7 +301,7 @@ def sig_search(md5, filename):
     # read!
     try:
         gather_df = pd.read_csv(csv_filename)
-        gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+        gather_df = gather_df[gather_df["unique_intersect_bp"] >= UNIQUE_INTERSECT_BP_THRESHOLD]
         gather_df = gather_df.sort_values(by='gather_result_rank')
     except:
         gather_df = []
@@ -375,7 +377,7 @@ def sig_subsearch(md5, filename, dbname):
     # read!
     try:
         gather_df = pd.read_csv(csv_filename)
-        gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
+        gather_df = gather_df[gather_df["unique_intersect_bp"] >= UNIQUE_INTERSECT_BP_THRESHOLD]
         gather_df = gather_df.sort_values(by='f_unique_weighted', ascending=False)
     except:
         gather_df = []
