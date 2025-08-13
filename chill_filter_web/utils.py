@@ -1,8 +1,12 @@
 import time
+import os.path
 
 import sourmash
 from sourmash import commands
+from sourmash.tax.__main__ import annotate as tax_annotate
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
+
+import taxburst
 
 from .database_info import MOLTYPE, KSIZE, SCALED
 
@@ -61,8 +65,29 @@ def run_gather(sigpath, csv_filename, db_info):
                     estimate_ani_ci=True,
                     num_results=0,
                     )
-    
     commands.gather(args)
+
+    
+    args2 = FakeArgs(
+        taxonomy_csv=['db2/gtdb+euks-lineages.sqldb'],
+        keep_full_identifiers=False,
+        keep_identifier_versions=True,
+        force=False,
+        lins=False,
+        ictv=False,
+        gather_csv=[csv_filename],
+        quiet=True,
+        from_file=None,
+        output_dir=os.path.dirname(csv_filename),
+        fail_on_missing_taxonomy=False,
+    )
+    tax_annotate(args2)
+
+    
+    tax_ann_out = csv_filename[:-3] + 'with-lineages.csv'
+    taxburst_out = csv_filename[:-3] + 'taxburst.html'
+    taxburst.main([tax_ann_out, '-o', taxburst_out, '-F', "tax_annotate"])
+
     if 0:
         status = branch.do_fastmultigather(
             sigpath,
