@@ -301,6 +301,8 @@ def sig_search(md5, filename):
     # read!
     try:
         gather_df = pd.read_csv(csv_filename)
+        # render compat sourmash gather <=> fastmultigather
+        gather_df['match_name'] = gather_df['name']
         gather_df = gather_df[gather_df["unique_intersect_bp"] >= UNIQUE_INTERSECT_BP_THRESHOLD]
         gather_df = gather_df.sort_values(by='gather_result_rank')
     except:
@@ -377,6 +379,8 @@ def sig_subsearch(md5, filename, dbname):
     # read!
     try:
         gather_df = pd.read_csv(csv_filename)
+        # render compat sourmash gather <=> fastmultigather
+        gather_df['match_name'] = gather_df['name']
         gather_df = gather_df[gather_df["unique_intersect_bp"] >= UNIQUE_INTERSECT_BP_THRESHOLD]
         gather_df = gather_df.sort_values(by='f_unique_weighted', ascending=False)
     except:

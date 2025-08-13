@@ -1,9 +1,19 @@
 import time
+import os.path
 
 import sourmash
+from sourmash import commands
+from sourmash.tax.__main__ import annotate as tax_annotate
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
 
+import taxburst
+
 from .database_info import MOLTYPE, KSIZE, SCALED
+
+
+class FakeArgs:
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
 
 
 def load_sig(fullpath):
@@ -22,17 +32,74 @@ def load_sig(fullpath):
 
 def run_gather(sigpath, csv_filename, db_info):
     start = time.time()
-    status = branch.do_fastmultigather(
-        sigpath,
-        db_info.filename,
-        0,
-        KSIZE,
-        SCALED,
-        MOLTYPE,
-        csv_filename,
-        False,
-        False,
+    status = 0
+    # prepare args object
+    args = FakeArgs(quiet=True,
+                    debug=False,
+                    ksize=KSIZE,
+                    scaled=SCALED,
+                    picklist=None,
+                    moltype=MOLTYPE,
+                    md5=None,
+                    query=sigpath,
+                    linear=False,
+                    prefetch=True,
+                    save_prefetch=None,
+                    save_prefetch_csv=False,
+                    output=csv_filename,
+                    save_matches=False,
+                    threshold_bp=0,
+                    output_unassigned=False,
+                    dna=True,
+                    protein=False,
+                    dayhoff=False,
+                    hp=False,
+                    skipm1n3=False,
+                    skipm2n3=False,
+                    include_db_pattern=None,
+                    exclude_db_pattern=None,
+                    cache_size=0,
+                    databases=db_info.filenames,
+                    fail_on_empty_database=True,
+                    ignore_abundance=False,
+                    estimate_ani_ci=True,
+                    num_results=0,
+                    )
+    commands.gather(args)
+
+    
+    args2 = FakeArgs(
+        taxonomy_csv=['db2/gtdb+euks-lineages.sqldb'],
+        keep_full_identifiers=False,
+        keep_identifier_versions=True,
+        force=False,
+        lins=False,
+        ictv=False,
+        gather_csv=[csv_filename],
+        quiet=True,
+        from_file=None,
+        output_dir=os.path.dirname(csv_filename),
+        fail_on_missing_taxonomy=False,
     )
+    tax_annotate(args2)
+
+    
+    tax_ann_out = csv_filename[:-3] + 'with-lineages.csv'
+    taxburst_out = csv_filename[:-3] + 'taxburst.html'
+    taxburst.main([tax_ann_out, '-o', taxburst_out, '-F', "tax_annotate"])
+
+    if 0:
+        status = branch.do_fastmultigather(
+            sigpath,
+            db_info.filename,
+            0,
+            KSIZE,
+            SCALED,
+            MOLTYPE,
+            csv_filename,
+            False,
+            False,
+        )
     end = time.time()
 
     print(f"branchwater gather status: {status}; time: {end - start:.2f}s")

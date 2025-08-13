@@ -18,6 +18,10 @@ rule all:
         'gtdb-rs220-phylum.mf.csv',
         'gtdb-rs220-phylum.rocksdb',
         'genbank-plants-2024.07.rocksdb',
+        'euk-other.rocksdb',
+        'euk-other-merged.rocksdb',
+        'fungi.rocksdb',
+        'fungi-merged.rocksdb',
 
 rule index_manifest:
     input:
@@ -52,6 +56,8 @@ rule plants_animals_and_gtdb:
         expand('outputs/{g}.k51.100k.sig.zip', g=GENOMES),
         'outputs/all-gtdb-rs220.k51.100k.sig.zip',
         'outputs/genbank-plants-merged-2024.07.sig.zip',
+        'outputs/fungi-merged.sig.zip',
+        'outputs/euk-other-merged.sig.zip',
     output:
         'plants+animals+gtdb.mf.csv',
     shell: """
@@ -112,4 +118,58 @@ rule plants_merged_all:
         "outputs/genbank-plants-merged-2024.07.sig.zip",
     shell: """
         sourmash sig merge --set-name genbank-plants {input} -o {output}
+    """
+
+rule fungi_merged_all:
+    input:
+        "downloads/fungi.k51.s100_000.sig.zip",
+    output:
+        "outputs/fungi-merged.sig.zip",
+    shell: """
+        sourmash sig merge --set-name genbank-fungi {input} -o {output}
+    """
+
+rule fungi_mf:
+    input:
+        "downloads/fungi.k51.s100_000.sig.zip",
+    output:
+        "fungi.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+rule fungi_merged_mf:
+    input:
+        "outputs/fungi-merged.sig.zip",
+    output:
+        "fungi-merged.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+rule euk_other_merged_all:
+    input:
+        "downloads/euk-other.k51.s100_000.sig.zip",
+    output:
+        "outputs/euk-other-merged.sig.zip",
+    shell: """
+        sourmash sig merge --set-name euk-other {input} -o {output}
+    """
+
+rule euk_other_mf:
+    input:
+        "downloads/euk-other.k51.s100_000.sig.zip",
+    output:
+        "euk-other.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
+    """
+
+rule euk_other_merged_mf:
+    input:
+        "outputs/euk-other-merged.sig.zip",
+    output:
+        "euk-other-merged.mf.csv",
+    shell: """
+        sourmash sig collect -F csv {input} -o {output} --abspath
     """
