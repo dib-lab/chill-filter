@@ -289,8 +289,9 @@ def sig_search(md5, filename):
     search_db = get_search_db()
 
     csv_filename = f"{websig.prefix}.x.{search_db.shortname}.gather.csv"
-    if not os.path.exists(csv_filename):
-        status = run_gather(websig.prefix, csv_filename, search_db)
+    tax_csv = csv_filename[:-3] + 'with-lineages.csv'
+    if not os.path.exists(tax_csv):
+        status, tax_csv = run_gather(websig.prefix, csv_filename, search_db)
         if status != 0:
             return "search failed, for reasons that are probably not your fault"
         else:
@@ -300,7 +301,10 @@ def sig_search(md5, filename):
 
     # read!
     try:
-        gather_df = pd.read_csv(csv_filename)
+        gather_df = pd.read_csv(tax_csv)
+        # render compat sourmash gather <=> fastmultigather
+        gather_df['match_name'] = gather_df['name']
+        gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
         gather_df = gather_df[gather_df["unique_intersect_bp"] >= UNIQUE_INTERSECT_BP_THRESHOLD]
         gather_df = gather_df.sort_values(by='gather_result_rank')
     except:
@@ -317,6 +321,7 @@ def sig_search(md5, filename):
 
     # provide match descriptions based on database-specific name rewriting
     gather_df['match_description'] = gather_df['match_name'].apply(search_db.get_display_name)
+    gather_df = gather_df.sort_values(by='f_unique_weighted', ascending=False)
 
     # process abundance-weighted matches
     if not sig_is_assembly(websig.ss):
@@ -366,7 +371,7 @@ def sig_subsearch(md5, filename, dbname):
 
     csv_filename = f"{websig.prefix}.x.{search_db.shortname}.gather.csv"
     if not os.path.exists(csv_filename):
-        status = run_gather(websig.prefix, csv_filename, search_db)
+        status, tax_csv = run_gather(websig.prefix, csv_filename, search_db)
         if status != 0:
             return "search failed, for reasons that are probably not your fault"
         else:
@@ -377,6 +382,9 @@ def sig_subsearch(md5, filename, dbname):
     # read!
     try:
         gather_df = pd.read_csv(csv_filename)
+        # render compat sourmash gather <=> fastmultigather
+        gather_df['match_name'] = gather_df['name']
+        gather_df = gather_df[gather_df["f_unique_weighted"] >= 0.001]
         gather_df = gather_df[gather_df["unique_intersect_bp"] >= UNIQUE_INTERSECT_BP_THRESHOLD]
         gather_df = gather_df.sort_values(by='f_unique_weighted', ascending=False)
     except:
@@ -434,3 +442,23 @@ def sig_subsearch_download_csv(md5, filename, dbname):
 
     csv_filename = f"{filename}.x.{dbname}.gather.csv"
     return send_from_directory(app.config['UPLOAD_FOLDER'], csv_filename)
+
+
+# taxburst view
+@app.route("/<string:md5>/<string:filename>/taxburst")
+def taxburst_html(md5, filename):
+    websig = load_sig_by_urlpath(md5, filename)
+    if websig is None:
+        return redirect(url_for("index"))
+
+    search_db = get_search_db()
+
+    taxburst_filename = f"{websig.prefix}.x.{search_db.shortname}.gather.taxburst.html"
+    if not os.path.exists(taxburst_filename):
+        print(f"taxburst file {taxburst_filename} does not exist; redirecting")
+        return redirect(url_for("index"))
+
+    with open(taxburst_filename, 'rt') as fp:
+        html = fp.read()
+    return html
+

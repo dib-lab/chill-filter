@@ -1,9 +1,22 @@
 import time
+import os.path
+import io
 
 import sourmash
+from sourmash import commands
+from sourmash.tax.__main__ import annotate as tax_annotate
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater as branch
+from sourmash.sourmash_args import FileOutputCSV
+from sourmash.search import GatherDatabases
+
+import taxburst
 
 from .database_info import MOLTYPE, KSIZE, SCALED
+
+
+class FakeArgs:
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
 
 
 def load_sig(fullpath):
@@ -22,21 +35,109 @@ def load_sig(fullpath):
 
 def run_gather(sigpath, csv_filename, db_info):
     start = time.time()
-    status = branch.do_fastmultigather(
-        sigpath,
-        db_info.filename,
-        0,
-        KSIZE,
-        SCALED,
-        MOLTYPE,
-        csv_filename,
-        False,
-        False,
+    status = 0
+    # prepare args object
+
+    if 0:
+        args = FakeArgs(quiet=True,
+                        debug=False,
+                        ksize=KSIZE,
+                        scaled=SCALED,
+                        picklist=None,
+                        moltype=MOLTYPE,
+                        md5=None,
+                        query=sigpath,
+                        linear=False,
+                        prefetch=True,
+                        save_prefetch=None,
+                        save_prefetch_csv=False,
+                        output=csv_filename,
+                        save_matches=False,
+                        threshold_bp=0,
+                        output_unassigned=False,
+                        dna=True,
+                        protein=False,
+                        dayhoff=False,
+                        hp=False,
+                        skipm1n3=False,
+                        skipm2n3=False,
+                        include_db_pattern=None,
+                        exclude_db_pattern=None,
+                        cache_size=0,
+                        databases=db_info.filenames,
+                        fail_on_empty_database=True,
+                        ignore_abundance=False,
+                        estimate_ani_ci=True,
+                        num_results=0,
+                        )
+        commands.gather(args)
+    else:
+        query = load_sig(sigpath)
+
+        db_handles = []
+        for filename in db_info.filenames:
+            print('loading:', filename)
+            db = sourmash.load_file_as_index(filename)
+            db = db.select(ksize=KSIZE, scaled=SCALED, moltype=MOLTYPE)
+            db_handles.append(db)
+
+        print('prefetch')
+        counters = []
+        for db in db_handles:
+            counter = db.counter_gather(query, 0)
+            counters.append(counter)
+
+        gather_iter = GatherDatabases(query,
+                                      counters,
+                                      threshold_bp=0,
+                                      ignore_abundance=False)
+        csv_writer = None
+        csv_outfp = io.StringIO()
+        for result in gather_iter:
+            if csv_writer is None:
+                csv_writer = result.init_dictwriter(csv_outfp)
+            result.write(csv_writer)
+
+        with FileOutputCSV(csv_filename) as fp:
+            fp.write(csv_outfp.getvalue())
+        print("done!")
+    
+    args2 = FakeArgs(
+        taxonomy_csv=['db2/gtdb+euks-lineages.sqldb'],
+        keep_full_identifiers=False,
+        keep_identifier_versions=True,
+        force=False,
+        lins=False,
+        ictv=False,
+        gather_csv=[csv_filename],
+        quiet=True,
+        from_file=None,
+        output_dir=os.path.dirname(csv_filename),
+        fail_on_missing_taxonomy=False,
     )
+    tax_annotate(args2)
+
+    
+    tax_ann_out = csv_filename[:-3] + 'with-lineages.csv'
+    taxburst_out = csv_filename[:-3] + 'taxburst.html'
+    taxburst.main([tax_ann_out, '-o', taxburst_out, '-F', "tax_annotate"])
+
+    if 0:
+        status = branch.do_fastmultigather(
+            sigpath,
+            db_info.filename,
+            0,
+            KSIZE,
+            SCALED,
+            MOLTYPE,
+            csv_filename,
+            False,
+            False,
+        )
     end = time.time()
 
     print(f"branchwater gather status: {status}; time: {end - start:.2f}s")
-    return status
+    return status, tax_ann_out
 
 
 def calc_abund_stats_above_1(mh):

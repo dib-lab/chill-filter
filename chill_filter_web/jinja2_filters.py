@@ -27,6 +27,10 @@ def unique_weighted_bp(item):
 def unique_flat_bp(item):
     return format_bp(item['unique_intersect_bp'])
 
+def tax_rank(item, rank_i):
+    rank_i = max(0, int(rank_i))
+    return ";".join(item['lineage'].split(';')[:rank_i])
+
 def subsearch_link(item, search_db):
     nextlevel_name = search_db.get_nextlevel_db(item['match_name'])
     descr = item['match_description']
@@ -44,6 +48,7 @@ filters_dict['format_bp'] = format_bp
 filters_dict['unique_weighted_bp'] = unique_weighted_bp
 filters_dict['unique_flat_bp'] = unique_flat_bp
 filters_dict['subsearch_link'] = subsearch_link
+filters_dict['tax_rank'] = tax_rank
 
 def add_filters(env_d):
     for k, v in filters_dict.items():

@@ -8,7 +8,7 @@ SCALED = 100_000
 class DatabaseDescription:
     def __init__(self,
                  shortname,
-                 filename,
+                 filenames,
                  merged_sketch_filename,
                  description,
                  sketch_to_display_names,
@@ -16,7 +16,7 @@ class DatabaseDescription:
                  *,
                  default=False):
         self.shortname = shortname
-        self.filename = filename
+        self.filenames = filenames
         self.merged_sketch_filename = merged_sketch_filename
         self.description = description
         self.sketch_to_display_names = sketch_to_display_names
@@ -41,8 +41,16 @@ class DatabaseDescription:
         return self.sketch_to_nextlevel.get(match_name)
 
 _databases = [
+    DatabaseDescription('all2',
+                        ['db2/gtdb-rs226.k51.scaled100k.rocksdb',
+                         'db2/ncbi-euks-2025.01.k51.scaled100k.rocksdb'],
+                        'NOMERGE',
+                        'all reference genomes',
+                        {},
+                        {},
+                        default=True),
     DatabaseDescription('all',
-                        'prepare-db/plants+animals+gtdb.rocksdb',
+                        ['prepare-db/plants+animals+gtdb.rocksdb'],
                         'prepare-db/plants+animals+gtdb.merged.sig.zip',
                         'all reference genomes',
                         {'bosTau9': 'cattle genome (bosTau9)',
@@ -55,35 +63,49 @@ _databases = [
                          'oviAri4': 'sheep genome (oviAri4)',
                          'susScr11': 'pig genome (suScr11)',
                          'genbank-plants': 'all plants (GenBank July 2024)',
+                         'genbank-fungi': 'all fungi (GenBank Jan 2025)',
+                         'euk-other': 'remaining eukaryotes (GenBank Jan 2025)'
                          },
                         {
                             'bacteria and archaea (GTDB rs220)': 'gtdb-rs220-genus',
                             'genbank-plants': 'genbank-plants-2024.07',
-                        }, default=True),
+                            'genbank-fungi': 'genbank-fungi',
+                            'euk-other': 'euk-other',
+                        }, default=False),
     DatabaseDescription('gtdb-only',
-                        'prepare-db/gtdb.rocksdb',
+                        ['prepare-db/gtdb.rocksdb'],
                         'prepare-db/gtdb.merged.sig.zip',
                         'microbes only (GTDB rs220, merged)',
                         {}, {}),
     DatabaseDescription('podar-ref',
-                        'prepare-db/podar-ref.rocksdb',
+                        ['prepare-db/podar-ref.rocksdb'],
                         'prepare-db/podar-ref.merged.sig.zip',
                         'podar-ref (64 microbes)',
                         {}, {}),
     DatabaseDescription('gtdb-rs220-phylum',
-                        'prepare-db/gtdb-rs220-phylum.rocksdb',
+                        ['prepare-db/gtdb-rs220-phylum.rocksdb'],
                         '',
                         'all bacterial and archaeal phyla (GTDB rs220)',
                         {}, {}),
     DatabaseDescription('gtdb-rs220-genus',
-                        'prepare-db/merged-genus.rocksdb',
+                        ['prepare-db/merged-genus.rocksdb'],
                         '',
                         'all bacterial and archaeal genera (GTDB rs220)',
                         {}, {}),
     DatabaseDescription('genbank-plants-2024.07',
-                        'prepare-db/genbank-plants-2024.07.rocksdb',
+                        ['prepare-db/genbank-plants-2024.07.rocksdb'],
                         '',
                         'plants (Genbank, July 2024)',
+                        {}, {}),
+    DatabaseDescription('genbank-fungi',
+                        ['prepare-db/fungi.rocksdb'],
+                        '',
+                        'all fungi (Genbank, Jan 2025)',
+                        {}, {}),
+    DatabaseDescription('euk-other',
+                        ['prepare-db/euk-other.rocksdb'],
+                        '',
+                        'remaining eukaryotes (Genbank, Jan 2025)',
                         {}, {}),
     ]
 

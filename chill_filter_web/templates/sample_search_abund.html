@@ -16,6 +16,8 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
 <p>
   Your sample is about <b>{{ "{:.1f}".format((1 - f_found) * 100) }}% unknown</b>. This could be new sequence and/or sequencing errors.
 <p>
+<a href="./taxburst">Interactively explore taxonomic hierarchy of results with taxburst</a>
+<p>
 <!-- (<b>{{ "{:.1f}".format(f_unknown_high*  (1 - f_found) * 100) }}%</b> of the sample is unknown and high abundance, so that's probably not sequencing error.) -->
 
 <h2>Sample breakdown</h2>
@@ -30,6 +32,7 @@ Based on the search results below, we estimate that at least <b>{{ "{:.1f}".form
      <td> {{ item['f_unique_weighted']|percent }} ({{ item|unique_weighted_bp }})  </td>
      <td> {{ item|subsearch_link(search_db) }}  </td>
      <td> {{ item['median_abund']|int }}x </td>
+     <td> {{ item|tax_rank(1) }} </td>
    </tr>
   {% endfor %}
 </table>
